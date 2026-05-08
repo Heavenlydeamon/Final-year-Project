@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% load static custom_filters %}
+
+{% block title %}Analytics Dashboard | EcoHeritage Teacher Lab{% endblock %}
+
+{% block extra_css %}
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.02);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 24px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card:hover {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.1);
+        transform: translateY(-4px);
+    }
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 100px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .status-good { background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+    .status-mixed { background: rgba(234, 179, 8, 0.1); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.2); }
+    .status-struggled { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .status-na { background: rgba(255, 255, 255, 0.05); color: #9ca3af; border: 1px solid rgba(255, 255, 255, 0.1); }
+
+    .progress-track {
+        height: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+    }
+    .progress-segment {
+        height: 100%;
+        transition: width 1s ease-out;
+    }
+
+    .scroll-hide::-webkit-scrollbar { display: none; }
+    .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+        <div>
+            <h1 class="text-4xl font-extrabold text-white tracking-tight leading-tight mb-2">
+                Learning <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500">Analytics</span>
+            </h1>
+            <p class="text-gray-400 font-medium">Real-time performance insights for your lower class sessions.</p>
+        </div>
+        <div class="flex gap-4">
+            <a href="{% url 'learning_sessions:export_lower_class_data' %}" class="btn-glow flex items-center gap-2 bg-white/5 hover:bg-white/10 px-6 py-3 rounded-2xl border border-white/10 transition-all text-sm font-bold uppercase tracking-wider">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Auto-Insights -->
+    {% if insights %}
+    <div class="mb-12 space-y-4">
+        {% for insight in insights %}
+        <div class="glass-card p-6 border-l-4 border-l-rose-500 bg-rose-500/5">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center text-rose-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+                <p class="text-gray-200 font-medium">{{ insight }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Topic Performance Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        {% for topic, data in topic_performance.items %}
+        <div class="glass-card p-8">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-1">{{ topic }}</h3>
+                    <p class="text-xs font-black uppercase tracking-widest text-gray-500">{{ data.total }} Total Evaluations</p>
+                </div>
+                <!-- Mini Stats Pie (Conceptual) -->
+                <div class="text-right">
+                    <span class="text-2xl font-black text-cyan-400">{{ data.good_pct }}%</span>
+                    <p class="text-[10px] font-bold text-gray-500 uppercase">Mastery</p>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="progress-track">
+                    <div class="progress-segment bg-emerald-500" style="width: {{ data.good_pct }}%"></div>
+                    <div class="progress-segment bg-yellow-500" style="width: {{ data.mixed_pct }}%"></div>
+                    <div class="progress-segment bg-rose-500" style="width: {{ data.struggled_pct }}%"></div>
+                </div>
+
+                <div class="flex justify-between text-[11px] font-black uppercase tracking-tighter">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                        <span class="text-gray-400">Good:</span>
+                        <span class="text-white">{{ data.good }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                        <span class="text-gray-400">Mixed:</span>
+                        <span class="text-white">{{ data.mixed }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-rose-500"></div>
+                        <span class="text-gray-400">Struggled:</span>
+                        <span class="text-white">{{ data.struggled }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="lg:col-span-2 glass-card p-20 text-center">
+            <div class="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-2">No Data Yet</h3>
+            <p class="text-gray-500">Record student evaluations during or after sessions to see analytics here.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Student Performance Table (Gradebook Style) -->
+    <div class="glass-card overflow-hidden">
+        <div class="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
+            <h3 class="text-xl font-bold text-white">Student Mastery Breakdown</h3>
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <input type="text" placeholder="Search students..." class="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-cyan-500/50 w-64 text-gray-300">
+                </div>
+            </div>
+        </div>
+        <div class="overflow-x-auto scroll-hide">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-white/5">
+                        <th class="px-8 py-6">Student Name</th>
+                        <th class="px-8 py-6">Class Group</th>
+                        {% for topic in relevant_topics %}
+                        <th class="px-8 py-6 text-center">{{ topic.title }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for item in student_data %}
+                    <tr class="group hover:bg-white/[0.02] transition-colors">
+                        <td class="px-8 py-6">
+                            <span class="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">{{ item.name }}</span>
+                        </td>
+                        <td class="px-8 py-6">
+                            <span class="text-xs font-medium text-gray-500">{{ item.class }}</span>
+                        </td>
+                        {% for topic in relevant_topics %}
+                        <td class="px-8 py-6 text-center">
+                            {% with rating=item.ratings|dictkey:topic.id %}
+                                <span class="status-badge status-{{ rating|default:'na' }}">
+                                    {{ rating|default:'N/A' }}
+                                </span>
+                            {% endwith %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{{ relevant_topics|length|add:2 }}" class="px-8 py-20 text-center text-gray-600 font-medium italic">
+                            Add students to your classes to see their performance tracking.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+{% endblock %}

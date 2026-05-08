@@ -1,0 +1,372 @@
+{% extends 'teacher/teacher_base.html' %}
+{% load custom_filters %}
+
+{% block title %}Class: {{ class_obj.name }} - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}{{ class_obj.name }}{% endblock %}
+{% block page_subtitle %}{{ class_obj.subject|default:"General Stream" }} • {{ class_obj.institution.name }}{% endblock %}
+
+{% block teacher_extra_css %}
+<style>
+    .class-header-summary-p {
+        background: rgba(18, 18, 18, 0.95);
+        color: #fff;
+        border-radius: 24px;
+        padding: 30px;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .class-meta-p {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+    .meta-pill-p {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 6px 15px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #ddd;
+    }
+
+    /* Tabs v2 */
+    .tabs-nav-v2 {
+        display: flex;
+        gap: 8px;
+        background: rgba(0, 0, 0, 0.03);
+        padding: 6px;
+        border-radius: 18px;
+        width: fit-content;
+        margin-bottom: 30px;
+    }
+    .tab-btn-v2 {
+        padding: 10px 20px;
+        border-radius: 14px;
+        border: none;
+        background: transparent;
+        font-weight: 700;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        transition: 0.3s;
+        cursor: pointer;
+    }
+    .tab-btn-v2.active {
+        background: #fff;
+        color: var(--text-main);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    /* Table Design v2 */
+    .table-v2 {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+    }
+    .table-v2 tr {
+        background: #fff;
+        transition: 0.3s;
+    }
+    .table-v2 tr:hover {
+        transform: scale(1.002);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+    .table-v2 td {
+        padding: 16px 20px;
+        border: none;
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+    .table-v2 td:first-child { border-radius: 12px 0 0 12px; }
+    .table-v2 td:last-child { border-radius: 0 12px 12px 0; }
+    .table-v2 th {
+        padding: 12px 20px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        font-weight: 800;
+    }
+
+    .tab-content-p {
+        display: none;
+    }
+    .tab-content-p.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .rank-p {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 800; margin-right: 12px; font-size: 0.8rem;
+    }
+    .rank-1-p { background: #ffd700; color: #000; }
+    .rank-2-p { background: #c0c0c0; color: #000; }
+    .rank-3-p { background: #cd7f32; color: #000; }
+    .rank-other-p { background: #f1f5f9; color: #64748b; }
+
+    .modal-p {
+        display: none; position: fixed; z-index: 2000;
+        left: 0; top: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(8px);
+        align-items: center; justify-content: center;
+    }
+</style>
+{% endblock %}
+
+{% block teacher_content %}
+<div class="class-detail-wrapper">
+    <!-- Summary Row -->
+    <div class="class-header-summary-p">
+        <div class="class-meta-p">
+            <div class="meta-pill-p"><i class="fa-solid fa-user-graduate me-2"></i> {% if is_lower_class %}{{ manual_students|length }}{% else %}{{ students|length }}{% endif %} Students</div>
+            {% if not is_lower_class %}
+            <div class="meta-pill-p"><i class="fa-solid fa-layer-group me-2"></i> {{ sections|length }} Sections</div>
+            <div class="meta-pill-p"><i class="fa-solid fa-book me-2"></i> {{ total_topics }} Topics</div>
+            <a href="#leaderboard" onclick="document.querySelector('[data-tab=leaderboard]').click()" class="meta-pill-p text-decoration-none" style="background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3);">
+                <i class="fa-solid fa-trophy me-2"></i> Class Leaderboard
+            </a>
+            {% endif %}
+        </div>
+        <div class="d-flex gap-2">
+            {% if is_lower_class %}
+                <button onclick="showAddStudentModal()" class="btn btn-sm btn-light rounded-pill px-3 fw-bold">Add Student</button>
+            {% else %}
+                <a href="{% url 'teacher_add_students' class_obj.id %}" class="btn btn-sm btn-light rounded-pill px-3 fw-bold">Add Students</a>
+            {% endif %}
+            <a href="{% url 'teacher_view_join_requests' %}" class="btn btn-sm btn-outline-light rounded-pill px-3">Join Requests</a>
+        </div>
+    </div>
+
+    <!-- Tabs Nav v2 -->
+    <div class="tabs-nav-v2">
+        {% if is_lower_class %}
+            <button class="tab-btn-v2 active" data-tab="manual-roster">Roster</button>
+            <button class="tab-btn-v2" data-tab="performance">Performance</button>
+        {% else %}
+            <button class="tab-btn-v2 active" data-tab="sections">Sections</button>
+            <button class="tab-btn-v2" data-tab="topics">Topics</button>
+            <button class="tab-btn-v2" data-tab="students">Students</button>
+            <button class="tab-btn-v2" data-tab="performance">Analytics</button>
+            <button class="tab-btn-v2" data-tab="leaderboard">Leaderboard</button>
+        {% endif %}
+    </div>
+
+    <!-- Tab Contents -->
+    {% if is_lower_class %}
+        <div id="manual-roster" class="tab-content-p active">
+            <div class="bento-card-p p-0 overflow-hidden">
+                <table class="table-v2 m-0">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Last Evaluation</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in manual_students %}
+                        <tr>
+                            <td><div class="fw-bold">{{ student.name }}</div><div class="text-muted extra-small">{{ student.address|default:"" }}</div></td>
+                            <td>
+                                {% with last_eval=student.evaluations.first %}
+                                    {% if last_eval %}
+                                        <span class="badge rounded-pill {% if last_eval.rating == 'good' %}bg-success{% elif last_eval.rating == 'mixed' %}bg-warning text-dark{% else %}bg-danger{% endif %} px-2">
+                                            {{ last_eval.get_rating_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted small">None</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td class="text-end">
+                                <button onclick="showEvalModal('{{ student.id }}', '{{ student.name }}')" class="btn btn-sm btn-dark rounded-pill px-3">Evaluate</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div id="sections" class="tab-content-p active">
+            <div class="bento-grid-p">
+                {% for section in sections %}
+                <div class="bento-col-4 bento-card-p">
+                    <h5 class="fw-bold">{{ section.name }}</h5>
+                    <p class="text-muted small">{{ section.description|truncatechars:80 }}</p>
+                    <div class="mt-3 small fw-bold text-gold-p">{{ section.topics.count }} Topics</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="topics" class="tab-content-p">
+            <div class="bento-grid-p">
+                {% for topic in all_topics %}
+                <div class="bento-col-4 bento-card-p">
+                    <div class="small text-muted fw-bold mb-1">{{ topic.section.name }}</div>
+                    <h5 class="fw-bold mb-3">{{ topic.name }}</h5>
+                    <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                        <div class="small text-muted"><i class="fa-solid fa-book-open me-1"></i> {{ topic.study_materials.count }} Shards</div>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'teacher_topic_analytics' class_obj.id topic.id %}" class="btn btn-sm btn-outline-dark rounded-pill px-3">Analytics</a>
+                            <a href="{% url 'topic_leaderboard' topic.id %}" class="btn btn-sm btn-gold-p rounded-pill px-3">Leaderboard</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="students" class="tab-content-p">
+            <div class="bento-card-p p-0 overflow-hidden">
+                <table class="table-v2 m-0">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Email</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr>
+                            <td class="fw-bold">{{ student.user.username }}</td>
+                            <td class="text-muted">{{ student.user.email }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'teacher_view_student_performance_class' class_obj.id student.user.id %}" class="btn btn-sm btn-outline-dark rounded-pill px-3">Analytics</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Common Performance Tab -->
+    <div id="performance" class="tab-content-p">
+        <div class="bento-grid-p">
+            <div class="bento-col-4 bento-card-p">
+                <div class="text-muted small fw-bold">Avg Score</div>
+                <div class="display-6 fw-bold text-gold-p">{{ avg_score|floatformat:1 }}%</div>
+            </div>
+            <div class="bento-col-8 bento-card-p">
+                <h6 class="fw-bold mb-3">Recent Activity</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm small align-middle">
+                        {% for attempt in quiz_attempts|slice:":5" %}
+                        <tr>
+                            <td class="fw-bold">{{ attempt.user_identifier }}</td>
+                            <td>{{ attempt.topic.name|default:"Quiz" }}</td>
+                            <td class="text-end fw-bold">{{ attempt.score }}/{{ attempt.total_questions }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Tab -->
+    {% if not is_lower_class %}
+    <div id="leaderboard" class="tab-content-p">
+        <div class="bento-grid-p">
+            <div class="bento-col-6 bento-card-p">
+                <h6 class="fw-bold mb-4">Academic Leaderboard</h6>
+                {% for entry in leaderboard %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rank-p {% if forloop.counter == 1 %}rank-1-p{% elif forloop.counter == 2 %}rank-2-p{% elif forloop.counter == 3 %}rank-3-p{% else %}rank-other-p{% endif %}">{{ forloop.counter }}</div>
+                    <div class="flex-grow-1 fw-bold">{{ entry.student.user.username }}</div>
+                    <div class="fw-bold text-gold-p">{{ entry.total_score }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="bento-col-6 bento-card-p">
+                <h6 class="fw-bold mb-4">Topic Mastery Rankings</h6>
+                <div class="list-group list-group-flush">
+                    {% for topic in all_topics %}
+                        {% if not topic.is_general %}
+                        <a href="{% url 'teacher_class_topic_leaderboard' class_obj.id topic.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center border-0 px-0 py-3" style="background: transparent;">
+                        <div>
+                            <div class="fw-bold">{{ topic.name }}</div>
+                            <div class="extra-small text-muted">{{ topic.section.name }}</div>
+                        </div>
+                        <span class="badge rounded-pill bg-gold-p text-dark px-3">View Ranking <i class="fa-solid fa-chevron-right ms-1"></i></span>
+                    </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modals -->
+<div id="addStudentModal" class="modal-p">
+    <div class="bento-card-p" style="width: 400px; background: #fff;">
+        <h5 class="fw-bold mb-4">Add Student</h5>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_manual_student">
+            <input type="text" name="name" class="form-control rounded-pill mb-3" placeholder="Full Name" required>
+            <textarea name="address" class="form-control mb-4" style="border-radius: 12px;" placeholder="Details (Optional)"></textarea>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-dark rounded-pill w-100">Add</button>
+                <button type="button" onclick="closeAddStudentModal()" class="btn btn-outline-dark rounded-pill w-100">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="evalModal" class="modal-p">
+    <div class="bento-card-p" style="width: 450px; background: #fff;">
+        <h5 class="fw-bold mb-1">Evaluate Student</h5>
+        <p id="studentName" class="small text-muted mb-4"></p>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_evaluation">
+            <input type="hidden" name="student_id" id="eval_student_id">
+            <select name="rating" class="form-select rounded-pill mb-3" required>
+                <option value="good">Excellent</option>
+                <option value="mixed">Satisfactory</option>
+                <option value="struggled">Needs Work</option>
+            </select>
+            <textarea name="remarks" class="form-control mb-4" style="border-radius: 12px;" placeholder="Remarks..."></textarea>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-dark rounded-pill w-100">Submit</button>
+                <button type="button" onclick="closeEvalModal()" class="btn btn-outline-dark rounded-pill w-100">Close</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.tab-btn-v2').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn-v2').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content-p').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
+        });
+    });
+
+    function showAddStudentModal() { document.getElementById('addStudentModal').style.display = 'flex'; }
+    function closeAddStudentModal() { document.getElementById('addStudentModal').style.display = 'none'; }
+    function showEvalModal(id, name) {
+        document.getElementById('eval_student_id').value = id;
+        document.getElementById('studentName').innerText = name;
+        document.getElementById('evalModal').style.display = 'flex';
+    }
+    function closeEvalModal() { document.getElementById('evalModal').style.display = 'none'; }
+</script>
+{% endblock %}

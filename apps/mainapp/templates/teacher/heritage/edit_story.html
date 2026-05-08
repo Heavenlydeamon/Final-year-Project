@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Build Story: {{ story.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --heritage-cream: #f8f6f0;
+        --sidebar-dark: #121212;
+        --accent-gold: #b38b4d;
+        --accent-gold-glow: rgba(179, 139, 77, 0.4);
+        --text-deep: #1a1a1a;
+    }
+    body { background-color: var(--heritage-cream) !important; font-family: 'Inter', sans-serif; color: var(--text-deep); }
+    .admin-wrapper { display: flex; min-height: 100vh; }
+    .admin-sidebar { width: 260px; background: var(--sidebar-dark); color: #fff; padding: 30px 15px; position: fixed; height: 100vh; z-index: 1000; }
+    .sidebar-brand { font-family: 'Tenor Sans', serif; font-size: 0.9rem; letter-spacing: 4px; color: var(--accent-gold); padding: 20px 15px; text-transform: uppercase; }
+    .nav-list { list-style: none; padding: 0; }
+    .nav-link-p { color: rgba(255, 255, 255, 0.5); text-decoration: none; padding: 12px 20px; display: flex; align-items: center; gap: 15px; border-radius: 12px; font-size: 0.9rem; transition: 0.3s; }
+    .nav-link-p.active { background: var(--accent-gold); color: #fff; }
+    .main-content { margin-left: 260px; padding: 40px 60px; flex: 1; }
+    .form-card { background: #fff; border-radius: 24px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); }
+    .btn-gold { background: var(--accent-gold); color: #fff; border: none; border-radius: 50px; padding: 10px 20px; font-weight: 600; }
+    .panel-item { background: #fff; border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.03); display: flex; gap: 20px; align-items: start; }
+    .panel-img { width: 140px; height: 90px; object-fit: cover; border-radius: 12px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrapper">
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand">ECOHERITAGE</div>
+        <ul class="nav-list" style="margin-top: 30px;">
+            <li><a href="{% url 'teacher_dashboard' %}" class="nav-link-p"><i class="fa-solid fa-gauge-high"></i> <span>Dashboard</span></a></li>
+            <li><a href="{% url 'admin_manage_stories' %}" class="nav-link-p active"><i class="fa-solid fa-book-open"></i> <span>My Stories</span></a></li>
+            <li><a href="{% url 'admin_manage_activities' %}" class="nav-link-p"><i class="fa-solid fa-gamepad"></i> <span>My Activities</span></a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <h1 style="font-family: 'Tenor Sans', serif;">Build Narrative: {{ story.title }}</h1>
+            <a href="{% url 'admin_manage_stories' %}" class="btn btn-light rounded-pill"><i class="fa-solid fa-arrow-left me-2"></i> Back</a>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="form-card sticky-top" style="top: 20px;">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <img src="{{ story.cover_image.url }}" class="w-100 rounded-4 mb-4 shadow-sm">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Story Status</label>
+                            <select name="status" class="form-control rounded-3">
+                                <option value="draft" {% if story.status == 'draft' %}selected{% endif %}>Draft (Private)</option>
+                                <option value="published" {% if story.status == 'published' %}selected{% endif %}>Published (Available to project)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Title</label>
+                            <input type="text" name="title" value="{{ story.title }}" class="form-control rounded-3" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold">Lead Character</label>
+                            <div class="row g-2">
+                                <div class="col-8"><input type="text" name="character_name" value="{{ story.character_name }}" class="form-control rounded-3" placeholder="Name"></div>
+                                <div class="col-4"><input type="text" name="character_avatar" value="{{ story.character_avatar }}" class="form-control rounded-3" placeholder="Emoji"></div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-gold w-100">Update Story Settings</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="d-flex justify-content-between align-items-end mb-4">
+                    <h3 style="font-family: 'Tenor Sans', serif;">Panels & Sequence</h3>
+                    <button class="btn btn-dark rounded-pill" data-bs-toggle="modal" data-bs-target="#addPanelModal">
+                        <i class="fa-solid fa-plus me-2"></i> Add Panel
+                    </button>
+                </div>
+
+                <div class="panel-list">
+                    {% for panel in panels %}
+                    <div class="panel-item">
+                        <div class="text-muted fw-bold" style="font-size: 1.5rem; min-width: 30px;">{{ panel.order }}</div>
+                        <img src="{{ panel.image.url }}" class="panel-img">
+                        <div class="flex-grow-1">
+                            <h5 class="mb-1 fw-bold">{{ panel.title|default:"Panel" }}</h5>
+                            <p class="text-muted small mb-2">{{ panel.text|truncatechars:150 }}</p>
+                            {% if panel.linked_activity %}
+                                <span class="badge bg-gold-p rounded-pill" style="font-size: 0.7rem;">
+                                    <i class="fa-solid fa-gamepad me-1"></i> Activity Linked
+                                </span>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'admin_delete_story_panel' panel.id %}" class="btn btn-sm btn-outline-danger border-0"><i class="fa-solid fa-trash"></i></a>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 bg-white rounded-5 border border-dashed">
+                        <p class="text-muted">Start building your story by adding panels.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add Panel Modal -->
+<div class="modal fade" id="addPanelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 p-4 pb-0">
+                <h5 class="modal-title fw-bold">Add Story Panel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'admin_add_story_panel' story.id %}" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Panel Type</label>
+                        <select name="panel_type" class="form-control rounded-3">
+                            <option value="narration">Standard Narration</option>
+                            <option value="activity">Interactive Interaction</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Narration Text</label>
+                        <textarea name="text" class="form-control rounded-3" rows="4" maxlength="250" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Panel Image</label>
+                        <input type="file" name="image" class="form-control rounded-3" accept="image/*" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Linked Activity (If Interaction)</label>
+                        <select name="linked_activity" class="form-control rounded-3">
+                            <option value="">-- No Activity --</option>
+                            {% for act in activities %}
+                                <option value="{{ act.id }}">{{ act.question_text|truncatechars:50 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="submit" class="btn-gold w-100">Add to Story</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

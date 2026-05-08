@@ -1,0 +1,99 @@
+<style>
+    .match-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10rem;
+        width: 100%;
+        max-width: 1000px;
+        padding: 2rem;
+        position: relative;
+    }
+    .match-column {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+    .match-card {
+        background: var(--glass);
+        border: 2px solid var(--glass-border);
+        padding: 1.5rem 2rem;
+        border-radius: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        font-size: 24px;
+        font-weight: 700;
+        transition: all 0.3s;
+    }
+    .color-dot {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid rgba(255,255,255,0.2);
+    }
+    .match-card.highlight {
+        border-color: var(--accent-green);
+        background: rgba(16, 185, 129, 0.1);
+    }
+    
+    /* Connection lines would need SVG or Canvas, 
+       for now let's use labels and colors to show matches */
+</style>
+
+<div class="match-container">
+    <div class="match-column">
+        {% for item in activity.items.left_items %}
+        <div class="match-card" id="left-{{ item.id }}">
+            {% if item.color %}
+            <div class="color-dot" data-color="{{ item.color }}"></div>
+            {% endif %}
+            {{ item.label }}
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="match-column">
+        {% for item in activity.items.right_items %}
+        <div class="match-card" id="right-{{ item.id }}">
+            {{ item.label }}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{{ activity.answer|json_script:"match-answers" }}
+<script>
+// Apply initial colors to dots
+document.querySelectorAll('.color-dot').forEach(el => {
+    if (el.dataset.color) el.style.backgroundColor = el.dataset.color;
+});
+
+function revealTapMatch() {
+    const answers = JSON.parse(document.getElementById('match-answers').textContent);
+    // answers is { "red": "face", "black": "eyes" }
+    
+    const colors = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
+    let colorIdx = 0;
+
+    for (const [leftId, rightId] of Object.entries(answers)) {
+        const leftEl = document.getElementById(`left-${leftId}`);
+        const rightEl = document.getElementById(`right-${rightId}`);
+        const matchColor = colors[colorIdx % colors.length];
+        
+        if (leftEl && rightEl) {
+            setTimeout(() => {
+                leftEl.style.borderColor = matchColor;
+                leftEl.style.backgroundColor = matchColor + '1A'; // 10% alpha
+                rightEl.style.borderColor = matchColor;
+                rightEl.style.backgroundColor = matchColor + '1A';
+                
+                // Add a small indicator
+                const indicator = `<span style="margin-left: auto; color: ${matchColor}; font-size: 32px;">★</span>`;
+                leftEl.innerHTML += indicator;
+                rightEl.innerHTML += indicator;
+            }, colorIdx * 500);
+            colorIdx++;
+        }
+    }
+}
+</script>

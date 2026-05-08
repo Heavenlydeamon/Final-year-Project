@@ -1,0 +1,135 @@
+{% extends 'teacher/teacher_base.html' %}
+
+{% block title %}Curriculum Management - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}Knowledge Architecture{% endblock %}
+{% block page_subtitle %}Define and organize educational topics within your academic streams.{% endblock %}
+
+{% block teacher_extra_css %}
+<style>
+    .topic-form-p {
+        background: white;
+        border-radius: 24px;
+        padding: 35px;
+        border: 1px solid var(--card-border);
+        box-shadow: var(--shadow-sm);
+    }
+    .topic-item-card-p {
+        border-left: 4px solid var(--accent-gold);
+    }
+    .section-pill-p {
+        padding: 6px 18px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: 0.3s;
+        border: 1px solid var(--card-border);
+        background: white;
+        color: var(--text-muted);
+    }
+    .section-pill-p.active {
+        background: var(--sidebar-bg);
+        color: white;
+        border-color: var(--sidebar-bg);
+    }
+    .section-pill-p:hover:not(.active) {
+        border-color: var(--accent-gold);
+        color: var(--accent-gold);
+    }
+</style>
+{% endblock %}
+
+{% block teacher_content %}
+<div class="manage-topics-wrapper">
+    
+    {% if messages %}
+    <div class="alert-panel">
+        {% for message in messages %}
+        <div class="alert-box approved" style="background: white; border: 1px solid var(--card-border);">
+            <i class="fa-solid fa-circle-check text-success"></i>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="bento-grid-p">
+        <!-- Add Topic Form -->
+        <div class="bento-col-4">
+            <div class="topic-form-p h-100">
+                <h4 class="card-label-p">New Topic Entry</h4>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Parent Stream</label>
+                        <select name="section" class="form-select rounded-pill px-3" required>
+                            <option value="">-- Choose Section --</option>
+                            {% for section in sections %}
+                            <option value="{{ section.id }}">{{ section.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Topic Name</label>
+                        <input type="text" name="name" class="form-control rounded-pill px-3" required placeholder="e.g. Flora of Idukki">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Executive Summary</label>
+                        <textarea name="description" class="form-control rounded-4" rows="4" required placeholder="Brief overview of the topic..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Display Priority</label>
+                        <input type="number" name="order" class="form-control rounded-pill px-3" value="0">
+                    </div>
+                    <button type="submit" class="btn-p-pill btn-gold-p w-100 py-3 mt-3">Create Asset</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Topics List -->
+        <div class="bento-col-8">
+            <div class="filter-p mb-4">
+                <h6 class="small fw-bold text-muted text-uppercase mb-3">Filter Curriculum</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{% url 'teacher_manage_topics' %}" class="section-pill-p {% if not selected_section %}active{% endif %}">Global Catalog</a>
+                    {% for section in sections %}
+                    <a href="{% url 'teacher_manage_topics_by_section' section.id %}" class="section-pill-p {% if selected_section.id == section.id %}active{% endif %}">{{ section.name }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="bento-grid-p">
+                {% for topic in topics %}
+                <div class="bento-col-12 bento-card-p topic-item-card-p">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="fw-bold m-0">{{ topic.name }}</h5>
+                            <span class="badge bg-gold-light text-gold-p extra-small px-2 py-1 mt-1">{{ topic.section.name|upper }}</span>
+                        </div>
+                        <div class="text-muted small fw-bold">#{{ topic.order }}</div>
+                    </div>
+                    <p class="text-muted small mb-4">{{ topic.description|truncatechars:150 }}</p>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">
+                        <div class="d-flex gap-3 text-muted small">
+                            <span><i class="fa-solid fa-book-open me-1"></i> {{ topic.study_materials.count }} Shards</span>
+                            <span><i class="fa-solid fa-circle-question me-1"></i> {{ topic.questions.count }} Trials</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'teacher_manage_study_materials_topic' topic.id %}" class="btn btn-sm btn-dark rounded-pill px-3">Materials</a>
+                            <a href="{% url 'teacher_add_quiz_question' %}" class="btn btn-sm btn-outline-dark rounded-pill px-3">Quizzes</a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="bento-col-12 bento-card-p text-center py-5">
+                    <p class="text-muted italic">No topics mapped for this stream yet.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

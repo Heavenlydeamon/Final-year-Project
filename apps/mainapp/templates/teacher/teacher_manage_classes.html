@@ -1,0 +1,177 @@
+{% extends 'teacher/teacher_base.html' %}
+
+{% block title %}Manage Classes - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}Academic Streams{% endblock %}
+{% block page_subtitle %}Create and manage your educational cohorts and curriculum content.{% endblock %}
+
+{% block teacher_extra_css %}
+<style>
+    /* Tab Styling v2 */
+    .tabs-nav-p {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    .tab-item-p {
+        background: white;
+        border: 1px solid var(--card-border);
+        padding: 12px 25px;
+        border-radius: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.3s;
+        color: var(--text-muted);
+    }
+    .tab-item-p.active {
+        background: var(--sidebar-bg);
+        color: white;
+        border-color: var(--sidebar-bg);
+        box-shadow: 0 5px 15px rgba(15, 23, 42, 0.2);
+    }
+
+    .tab-content-p { display: none; }
+    .tab-content-p.active { display: block; animation: fadeIn 0.4s ease; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .class-card-p {
+        border-top: 4px solid var(--accent-gold);
+    }
+    
+    .subject-pill {
+        background: var(--accent-gold-light);
+        color: var(--accent-gold);
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .topic-list-p {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .topic-item-p {
+        background: rgba(0,0,0,0.02);
+        padding: 12px 15px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+</style>
+{% endblock %}
+
+{% block teacher_content %}
+<div class="manage-classes-wrapper">
+    
+    <div class="tabs-nav-p">
+        <div class="tab-item-p active" data-tab="create">Wizard Launcher</div>
+        <div class="tab-item-p" data-tab="list">Active Classes ({{ classes|length }})</div>
+    </div>
+
+    <!-- Create Tab -->
+    <div id="tab-create" class="tab-content-p active">
+        <div class="bento-card-p text-center py-5" style="background: linear-gradient(135deg, #fff 0%, #f8faff 100%);">
+            <div style="font-size: 4rem; margin-bottom: 20px;">✨</div>
+            <h2 class="fw-bold mb-3" style="font-family: 'Tenor Sans', serif;">Advanced Creation Wizard</h2>
+            <p class="text-muted mb-5 mx-auto" style="max-width: 600px;">
+                Automate your curriculum setup. Our AI wizard handles class creation, PDF content extraction, 
+                and instant quiz generation in one seamless flow.
+            </p>
+            
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{% url 'teacher_class_creation_wizard' %}" class="btn-p-pill btn-gold-p px-5 py-3">
+                    Launch Wizard <i class="fas fa-magic ms-2"></i>
+                </a>
+            </div>
+
+            <div class="bento-grid-p mt-5 pt-5 border-top">
+                <div class="bento-col-4">
+                    <div class="stat-icon-p mx-auto mb-3"><i class="fas fa-file-pdf"></i></div>
+                    <h6 class="fw-bold">PDF Extraction</h6>
+                    <p class="small text-muted">Upload notes to auto-extract text.</p>
+                </div>
+                <div class="bento-col-4">
+                    <div class="stat-icon-p mx-auto mb-3"><i class="fas fa-robot"></i></div>
+                    <h6 class="fw-bold">AI Quiz Gen</h6>
+                    <p class="small text-muted">Generate assessments from content.</p>
+                </div>
+                <div class="bento-col-4">
+                    <div class="stat-icon-p mx-auto mb-3"><i class="fas fa-bolt"></i></div>
+                    <h6 class="fw-bold">Fast Tracking</h6>
+                    <p class="small text-muted">Zero manual typing for topics.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- List Tab -->
+    <div id="tab-list" class="tab-content-p">
+        <div class="bento-grid-p">
+            {% for class in classes %}
+            <div class="bento-col-6 bento-card-p class-card-p">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h4 class="fw-bold m-0">{{ class.name }}</h4>
+                        <div class="text-muted small">{{ class.institution.name|default:"General Academy" }}</div>
+                    </div>
+                    <span class="subject-pill">{{ class.subject }}</span>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="small text-uppercase fw-bold text-muted mb-3">Curriculum Overview</h6>
+                    <div class="topic-list-p">
+                        {% for section in class.class_sections.all|slice:":2" %}
+                        <div class="topic-item-p">
+                            <span class="fw-bold small">{{ section.name }}</span>
+                            <span class="badge bg-white text-dark border small">{{ section.topics.count }} Topics</span>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted small">No subjects mapped yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">
+                    <div class="small text-muted"><i class="fa-solid fa-user-group me-1"></i> {{ class.enrollments.count }} Students</div>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'teacher_class_detail' class.id %}" class="btn btn-sm btn-dark rounded-pill px-3">Manage</a>
+                        <form method="post" onsubmit="return confirm('Archive this class?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="class_id" value="{{ class.id }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="bento-col-12 bento-card-p text-center py-5">
+                <p class="text-muted">No active classes. Use the wizard to get started.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.querySelectorAll('.tab-item-p').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab-item-p').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content-p').forEach(c => c.classList.remove('active'));
+            
+            tab.classList.add('active');
+            const target = tab.getAttribute('data-tab');
+            document.getElementById('tab-' + target).classList.add('active');
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Heritage Site Topics — EcoHeritage{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/bento-topics.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="bt-page" data-theme="heritage">
+<div class="bt-container">
+
+    {# ── Page Header ──────────────────────────────────────── #}
+    <header class="bt-header bt-reveal">
+
+        <nav class="bt-breadcrumb">
+            <a href="{% url 'home' %}">Home</a>
+            <span class="bt-breadcrumb-sep">›</span>
+            <a href="{% url 'heritage' %}">Heritage Sites</a>
+            <span class="bt-breadcrumb-sep">›</span>
+            <span>Topics</span>
+        </nav>
+
+        <span class="bt-section-label">Historical Preservation</span>
+        <h1 class="bt-page-title">Heritage Sites</h1>
+        <p class="bt-page-subtitle">
+            A scholarly collection of Kerala's architectural landmarks, ancient temples,
+            forts, and living heritage — preserved for the next generation.
+        </p>
+
+        <div class="bt-header-stats">
+            <div class="bt-stat">
+                <span class="bt-stat-num" data-topic-count>{{ topics|length }}</span>
+                <span class="bt-stat-label">Modules</span>
+            </div>
+            <div class="bt-stat">
+                <span class="bt-stat-num">{{ section.name }}</span>
+                <span class="bt-stat-label">Section</span>
+            </div>
+        </div>
+    </header>
+
+    {# ── Bento Grid ───────────────────────────────────────── #}
+    <div class="bt-grid">
+
+        {% for topic in topics %}
+
+        {% if forloop.counter == 1 %}{% with span_class="bt-card--hero" %}
+        {% elif forloop.counter == 2 %}{% with span_class="bt-card--featured" %}
+        {% elif forloop.counter == 3 %}{% with span_class="bt-card--wide" %}
+        {% elif forloop.counter == 4 or forloop.counter == 5 %}{% with span_class="bt-card--standard" %}
+        {% elif forloop.counter == 6 %}{% with span_class="bt-card--wide" %}
+        {% elif forloop.counter == 7 or forloop.counter == 8 %}{% with span_class="bt-card--half" %}
+        {% else %}{% with span_class="bt-card--standard" %}
+        {% endif %}
+
+        <article class="bt-card {{ span_class }} bt-reveal"
+                 data-topic-id="{{ topic.id }}"
+                 aria-label="{{ topic.name }}">
+
+            {# ── Image ── #}
+            <div class="bt-card__img-wrap">
+                {% if topic.image_url %}
+                    <img src="{{ topic.image_url }}"
+                         alt="{{ topic.name }}"
+                         class="bt-card__img"
+                         loading="{% if forloop.counter <= 2 %}eager{% else %}lazy{% endif %}">
+                {% else %}
+                    <div style="width:100%;height:100%;background:linear-gradient(135deg,
+                        hsl(35,40%,18%) 0%, hsl(35,40%,28%) 60%, hsl(35,38%,36%) 100%);
+                        display:flex;align-items:center;justify-content:center;">
+                        <i class="fa-solid fa-monument fa-4x" style="color:rgba(255,255,255,0.12)"></i>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="bt-card__glass"></div>
+
+            {% if forloop.counter == 1 %}
+            <div class="bt-card__text-panel">
+                <span class="bt-badge bt-badge--protected">
+                    <i class="fa-solid fa-landmark"></i> Protected Heritage
+                </span>
+                <h2 class="bt-topic-title">{{ topic.name }}</h2>
+                <p class="bt-topic-desc">{{ topic.description|truncatewords:28 }}</p>
+                <div class="bt-meta">
+                    <span class="bt-meta__item">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                            <path d="M8 1L10.2 6H15.6L11.2 9.4L13.4 14.8L8 11.4L2.6 14.8L4.8 9.4L0.4 6H5.8L8 1Z"
+                                  fill="currentColor"/>
+                        </svg>
+                        {{ topic.study_materials.count }} materials
+                    </span>
+                    <span class="bt-meta__item">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                            <circle cx="8" cy="8" r="6.5" stroke="currentColor"/>
+                            <path d="M8 4.5V8L10.5 10" stroke="currentColor" stroke-linecap="round"/>
+                        </svg>
+                        In-depth study
+                    </span>
+                </div>
+                <div class="bt-actions">
+                    <a href="{% url 'topic_study' topic.id %}" class="bt-btn bt-btn--primary">
+                        <i class="fa-solid fa-scroll"></i> Chronicles
+                    </a>
+                    <a href="{% url 'topic_quiz' topic.id %}" class="bt-btn bt-btn--ghost">
+                        <i class="fa-solid fa-lightbulb"></i> Quiz
+                    </a>
+                </div>
+            </div>
+            <div class="bt-card__content" style="display:none;" id="hero-mobile-{{ topic.id }}">
+                <span class="bt-badge bt-badge--protected"><i class="fa-solid fa-landmark"></i> Protected Heritage</span>
+                <h2 class="bt-topic-title">{{ topic.name }}</h2>
+                <div class="bt-actions">
+                    <a href="{% url 'topic_study' topic.id %}" class="bt-btn bt-btn--primary"><i class="fa-solid fa-scroll"></i> Chronicles</a>
+                    <a href="{% url 'topic_quiz' topic.id %}" class="bt-btn bt-btn--ghost"><i class="fa-solid fa-lightbulb"></i> Quiz</a>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="bt-card__content">
+                <span class="bt-badge
+                    {% if forloop.counter == 2 %}bt-badge--featured
+                    {% else %}bt-badge--module{% endif %}">
+                    {% if forloop.counter == 2 %}
+                        <i class="fa-solid fa-star"></i> Featured Archive
+                    {% else %}
+                        <i class="fa-solid fa-building-columns"></i> Heritage Module
+                    {% endif %}
+                </span>
+                <h2 class="bt-topic-title">{{ topic.name }}</h2>
+                {% if span_class == "bt-card--featured" or span_class == "bt-card--wide" or span_class == "bt-card--tall" %}
+                <p class="bt-topic-desc">{{ topic.description|truncatewords:22 }}</p>
+                {% endif %}
+                <div class="bt-meta">
+                    <span class="bt-meta__item">
+                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                            <circle cx="8" cy="8" r="6.5" stroke="currentColor"/>
+                            <path d="M8 4.5V8L10.5 10" stroke="currentColor" stroke-linecap="round"/>
+                        </svg>
+                        {{ topic.study_materials.count }} materials
+                    </span>
+                </div>
+                <div class="bt-actions">
+                    <a href="{% url 'topic_study' topic.id %}" class="bt-btn bt-btn--primary">
+                        <i class="fa-solid fa-book-open"></i> Study
+                    </a>
+                    <a href="{% url 'topic_quiz' topic.id %}" class="bt-btn bt-btn--ghost">
+                        <i class="fa-solid fa-lightbulb"></i> Quiz
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+        </article>
+
+        {% endwith %}
+        {% empty %}
+        <div class="bt-empty">
+            <span class="bt-empty__icon"><i class="fa-solid fa-monument"></i></span>
+            <p class="bt-empty__msg">Heritage archives are being digitized. More modules coming soon.</p>
+        </div>
+        {% endfor %}
+
+    </div>{# /bt-grid #}
+
+    <div class="bt-return bt-reveal">
+        <a href="{% url 'heritage' %}">
+            <i class="fa-solid fa-arrow-left"></i> Back to Heritage Sites
+        </a>
+    </div>
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/bento-topics.js' %}"></script>
+<script>
+    (function() {
+        function checkHero() {
+            const heroCard = document.querySelector('.bt-card--hero');
+            if (!heroCard) return;
+            const textPanel = heroCard.querySelector('.bt-card__text-panel');
+            const mobileFallback = heroCard.querySelector('[id^="hero-mobile-"]');
+            if (!textPanel || !mobileFallback) return;
+            if (window.innerWidth <= 1100) {
+                textPanel.style.display = 'none';
+                mobileFallback.style.display = 'flex';
+                mobileFallback.style.flexDirection = 'column';
+                mobileFallback.style.justifyContent = 'flex-end';
+            } else {
+                textPanel.style.display = 'flex';
+                mobileFallback.style.display = 'none';
+            }
+        }
+        checkHero();
+        window.addEventListener('resize', checkHero);
+    })();
+</script>
+{% endblock %}

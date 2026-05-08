@@ -1,0 +1,257 @@
+{% extends 'student/student_base.html' %}
+{% load static %}
+
+{% block title %}Performance Analytics | EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}Scholar Analytics{% endblock %}
+{% block page_subtitle %}Quantifying your journey through the archives.{% endblock %}
+
+{% block student_extra_css %}
+<style>
+    /* Performance Specifics */
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 900;
+        font-family: 'Tenor Sans', serif;
+        margin: 0.5rem 0;
+        color: var(--sidebar-bg);
+    }
+
+    .metric-label {
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+    }
+
+    .progress-minimal {
+        height: 8px;
+        background: #f1f5f9;
+        border-radius: 100px;
+        overflow: hidden;
+        margin: 1rem 0;
+    }
+
+    .progress-bar-gold {
+        height: 100%;
+        background: var(--accent-gold-gradient);
+        transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 0;
+    }
+
+    .mastery-item {
+        padding: 1.5rem;
+        background: white;
+        border: 1px solid var(--card-border);
+        border-radius: 1.25rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s;
+    }
+
+    .mastery-item:hover {
+        border-color: var(--accent-gold);
+        transform: translateX(10px);
+    }
+
+    .log-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .log-item:last-child {
+        border-bottom: none;
+    }
+
+    .heatmap-cell {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-align: center;
+        transition: all 0.2s;
+    }
+
+    .heatmap-cell.completed { background: var(--success-green-light); color: var(--success-green); }
+    .heatmap-cell.partial { background: var(--accent-gold-light); color: var(--accent-gold); }
+    .heatmap-cell.empty { background: #f1f5f9; color: #94a3b8; }
+
+    /* Grid Spanning */
+    .bento-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 24px;
+    }
+    .col-span-12 { grid-column: span 12; }
+    .col-span-8 { grid-column: span 8; }
+    .col-span-4 { grid-column: span 4; }
+</style>
+{% endblock %}
+
+{% block student_content %}
+<div class="bento-grid">
+    <!-- Summary Metrics -->
+    <div class="bento-card col-span-4 text-center">
+        <span class="metric-label">Assessments</span>
+        <div class="metric-value">{{ total_quizzes }}</div>
+        <p class="text-muted small">Total Records</p>
+    </div>
+    <div class="bento-card col-span-4 text-center">
+        <span class="metric-label">Proficiency</span>
+        <div class="metric-value">{{ avg_score|floatformat:1 }}%</div>
+        <p class="text-muted small">Average Score</p>
+    </div>
+    <div class="bento-card col-span-4 text-center">
+        <span class="metric-label">Sectors</span>
+        <div class="metric-value">{{ section_performance|length }}</div>
+        <p class="text-muted small">Active Modules</p>
+    </div>
+
+    <!-- Recommendations -->
+    {% if weak_topics or incomplete_topics %}
+    <div class="bento-card glass col-span-12">
+        <h3 style="font-family: 'Tenor Sans'; font-size: 1.2rem; margin-bottom: 1.5rem;"><i class="fa-solid fa-wand-magic-sparkles"></i> Strategic Directives</h3>
+        <div class="row g-3">
+            {% for topic in incomplete_topics %}
+            <div class="col-md-6">
+                <div class="p-3 bg-white border-custom rounded-4 d-flex align-items-center gap-3">
+                    <div style="width: 50px; height: 50px; border-radius: 12px; background: var(--accent-gold-light); color: var(--accent-gold); display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h4 style="font-size: 1rem; margin: 0;">{{ topic.name }}</h4>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Resume study to complete module</p>
+                    </div>
+                    <a href="{% url 'student_study_topic' topic.id %}" class="btn-study py-1 px-3">Resume</a>
+                </div>
+            </div>
+            {% endfor %}
+            {% for topic in weak_topics %}
+            <div class="col-md-6">
+                <div class="p-3 bg-white border-custom rounded-4 d-flex align-items-center gap-3" style="border-left: 4px solid #ef4444 !important;">
+                    <div style="width: 50px; height: 50px; border-radius: 12px; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h4 style="font-size: 1rem; margin: 0;">{{ topic.name }}</h4>
+                        <p style="font-size: 0.75rem; color: #ef4444; margin: 0;">Review & retake assessment</p>
+                    </div>
+                    <a href="{% url 'student_study_topic' topic.id %}" class="btn-quiz py-1 px-3" style="border-color: #ef4444; color: #ef4444;">Retake</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Subject Mastery -->
+    <div class="bento-card col-span-8">
+        <h3 style="font-family: 'Tenor Sans'; font-size: 1.2rem; margin-bottom: 2rem;">Subject Proficiency</h3>
+        {% if section_performance %}
+            {% for section_name, data in section_performance.items %}
+            <div class="mastery-item">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h4 style="font-size: 1rem; margin: 0;">{{ section_name }}</h4>
+                    <span style="font-weight: 800; color: var(--accent-gold);">{{ data.avg_percentage|floatformat:1 }}%</span>
+                </div>
+                <div class="progress-minimal">
+                    <div class="progress-bar-gold" data-progress-width="{{ data.avg_percentage|default:0 }}"></div>
+                </div>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>{{ data.count }} Assessments</span>
+                    <span>{{ data.score|floatformat:0 }} Points</span>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-5 opacity-50">No academic records found.</div>
+        {% endif %}
+    </div>
+
+    <!-- Activity Logs -->
+    <div class="bento-card col-span-4">
+        <h3 style="font-family: 'Tenor Sans'; font-size: 1.2rem; margin-bottom: 2rem;">Recent Logs</h3>
+        <div class="log-list">
+            {% if quiz_attempts %}
+                {% for attempt in quiz_attempts|slice:":6" %}
+                <div class="log-item">
+                    <div>
+                        <div style="font-weight: 700; font-size: 0.85rem;">{{ attempt.section.name|truncatechars:20 }}</div>
+                        <div class="text-muted small">{{ attempt.date_attempted|date:"d M Y" }}</div>
+                    </div>
+                    <div style="font-weight: 900; color: var(--sidebar-bg); font-size: 1.1rem;">
+                        {{ attempt.score }}/{{ attempt.total_questions }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-5 opacity-50">No logs found.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Heatmap / Reading Progress -->
+    <div class="bento-card col-span-12">
+        <h3 style="font-family: 'Tenor Sans'; font-size: 1.2rem; margin-bottom: 2rem;">Reading Heatmap</h3>
+        <div class="row g-4">
+            {% for tp in topic_study_progress %}
+            <div class="col-lg-6">
+                <div class="p-4 bg-white border-custom rounded-5 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 style="font-family: 'Tenor Sans'; font-size: 1.1rem; margin: 0;">{{ tp.topic.name }}</h4>
+                        <span class="badge {% if tp.percentage >= 100 %}bg-success text-white{% else %}bg-light text-dark{% endif %}" style="border-radius: 10px;">
+                            {{ tp.percentage|floatformat:0 }}%
+                        </span>
+                    </div>
+                    
+                    {% if tp.section_breakdowns %}
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">
+                        {% for sec in tp.section_breakdowns %}
+                        <div class="heatmap-cell {% if sec.is_read %}completed{% else %}empty{% endif %}" title="{{ sec.label }}">
+                            <div style="font-size: 0.65rem; opacity: 0.7;">SEC {{ forloop.counter }}</div>
+                            {% if sec.is_read %}✓ Read{% else %}Pending{% endif %}
+                            {% if sec.score is not None %}
+                            <div style="font-size: 0.7rem; margin-top: 4px; font-weight: 800;">{{ sec.score }}%</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="progress-minimal">
+                        <div class="progress-bar-gold" data-progress-width="{{ tp.percentage|default:0 }}"></div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const cards = document.querySelectorAll('.bento-card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 50);
+        });
+
+        // Decouple progress bar widths
+        document.querySelectorAll('[data-progress-width]').forEach(el => {
+            const width = el.getAttribute('data-progress-width');
+            el.style.width = width + '%';
+        });
+    });
+</script>
+{% endblock %}

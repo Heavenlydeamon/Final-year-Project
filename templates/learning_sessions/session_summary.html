@@ -1,0 +1,151 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Summary | EcoHeritage</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Lexend:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0a0b;
+            --accent-green: #00f5a0;
+            --accent-blue: #00d9ff;
+            --text-main: #ffffff;
+            --text-dim: #a0a0ab;
+            --glass: rgba(255, 255, 255, 0.05);
+            --font-display: 'Outfit', sans-serif;
+            --font-body: 'Lexend', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            margin: 0;
+        }
+
+        .summary-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 4rem;
+            border-radius: 4rem;
+            width: 100%;
+            max-width: 900px;
+            animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #fff, var(--text-dim));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: var(--text-dim);
+            margin-bottom: 4rem;
+        }
+
+        .activity-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem 2rem;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 2rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .activity-row:hover {
+            background: rgba(255,255,255,0.05);
+            transform: translateX(10px);
+        }
+
+        .activity-info {
+            flex: 1;
+        }
+
+        .activity-q {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .badge {
+            padding: 0.5rem 1.25rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-good { background: rgba(0, 245, 160, 0.1); color: var(--accent-green); }
+        .badge-mixed { background: rgba(255, 184, 0, 0.1); color: #ffb800; }
+        .badge-struggled { background: rgba(255, 71, 87, 0.1); color: #ff4757; }
+
+        .btn-done {
+            display: inline-block;
+            margin-top: 4rem;
+            padding: 1.5rem 4rem;
+            background: var(--accent-blue);
+            color: #000;
+            text-decoration: none;
+            border-radius: 2rem;
+            font-weight: 900;
+            font-family: var(--font-display);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.3s ease;
+        }
+
+        .btn-done:hover {
+            background: #fff;
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(0, 217, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="summary-card">
+        <h1>Session <span style="color: var(--accent-blue)">Complete</span></h1>
+        <p class="subtitle">Topic: {{ session.topic.title }} • {{ activity_details|length }} Activities Recorded</p>
+
+        <div class="results-list">
+            {% for detail in activity_details %}
+            <div class="activity-row">
+                <div class="activity-info">
+                    <div class="activity-q">{{ detail.question|truncatechars:60 }}</div>
+                </div>
+                <div class="badge badge-{{ detail.level }}">
+                    {{ detail.level_display }}
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: var(--text-dim); font-style: italic;">No responses were recorded for this session.</p>
+            {% endfor %}
+        </div>
+
+        <a href="{% url 'learning_sessions:session_history' %}" class="btn-done">Return to Dashboard</a>
+    </div>
+</body>
+</html>

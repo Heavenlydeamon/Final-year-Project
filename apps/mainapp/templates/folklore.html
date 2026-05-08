@@ -1,0 +1,693 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kerala Folklore | EcoHeritage Kerala</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Tenor+Sans&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-deep: #0e0e0e;
+            --bg-bone: #f4f1ea;
+            --text-dark: #1a1a1a;
+            --text-light: #f4f1ea;
+            --accent-gold: #b38b4d;
+            --border-subtle: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-light);
+            font-family: 'Inter', sans-serif;
+            font-weight: 300;
+            line-height: 1.8;
+            overflow-x: hidden;
+            padding-top: 100px;
+        }
+
+        h1,
+        h2,
+        h3,
+        .navbar-brand {
+            font-family: 'Tenor Sans', serif;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        /* --- Navbar --- */
+        .navbar {
+            background: rgba(14, 14, 14, 0.98) !important;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .navbar-brand {
+            color: var(--text-light) !important;
+            font-size: 1.1rem;
+        }
+
+        .nav-link {
+            color: var(--text-light) !important;
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .btn-minimal {
+            padding: 10px 25px;
+            border: 1px solid var(--accent-gold);
+            background: transparent;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            transition: all 0.4s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-minimal:hover {
+            background: var(--accent-gold);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* --- Layout --- */
+        .page-header {
+            padding: 80px 0 40px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 60px;
+        }
+
+        .realm-label {
+            font-size: 0.7rem;
+            color: var(--accent-gold);
+            font-weight: 600;
+            letter-spacing: 5px;
+            display: block;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+
+        .folklore-list .list-group-item {
+            background: transparent;
+            color: rgba(244, 241, 234, 0.5);
+            border: none;
+            border-left: 2px solid var(--border-subtle);
+            padding: 1rem 1.5rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border-radius: 0;
+            margin-bottom: 5px;
+        }
+
+        .folklore-list .list-group-item:hover {
+            color: var(--text-light);
+            background: rgba(255, 255, 255, 0.02);
+            border-left-color: rgba(179, 139, 77, 0.5);
+        }
+
+        .folklore-list .list-group-item.active {
+            background: rgba(179, 139, 77, 0.1);
+            color: var(--accent-gold);
+            border-left-color: var(--accent-gold);
+        }
+
+        .folklore-accordion {
+            --bs-accordion-bg: transparent;
+            --bs-accordion-color: var(--text-light);
+            --bs-accordion-border-color: rgba(255, 255, 255, 0.1);
+            --bs-accordion-btn-color: var(--text-light);
+            --bs-accordion-btn-bg: transparent;
+            --bs-accordion-btn-focus-box-shadow: none;
+            --bs-accordion-active-color: var(--accent-gold);
+            --bs-accordion-active-bg: rgba(255, 255, 255, 0.02);
+        }
+
+        .folklore-accordion .accordion-button::after {
+            filter: invert(1);
+        }
+
+        .folklore-accordion .accordion-button:not(.collapsed)::after {
+            filter: sepia(1) saturate(3) hue-rotate(35deg) invert(0.2);
+        }
+
+        .folklore-accordion .accordion-button {
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 1.25rem 1rem;
+        }
+
+        .folklore-accordion .accordion-body {
+            color: rgba(244, 241, 234, 0.7);
+            font-size: 0.95rem;
+            line-height: 1.9;
+            padding-bottom: 1.5rem;
+        }
+
+        .tab-content {
+            border: 1px solid rgba(179, 139, 77, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.01);
+            min-height: 600px;
+        }
+
+        footer {
+            padding: 80px 0;
+            margin-top: 100px;
+            border-top: 1px solid var(--border-subtle);
+            text-align: center;
+            letter-spacing: 3px;
+            font-size: 0.65rem;
+            color: rgba(244, 241, 234, 0.3);
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeIn 1s forwards ease-out;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg fixed-top" id="mainNav">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">ECO<span style="color:var(--accent-gold)">LEGACY</span></a>
+            <div class="ms-auto d-flex align-items-center">
+                <a href="{% url 'home' %}" class="btn-minimal py-2 px-3" style="font-size: 0.6rem;">&larr; Back to
+                    Home</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container page-header reveal">
+        <span class="realm-label">Chapter 04</span>
+        <h1 class="mb-4" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">Myths & Folklore</h1>
+        <p style="max-width: 650px; margin: 0 auto; opacity: 0.8; font-weight: 300;">Delve deeper into the esoteric
+            traditions, haunting legends, and foundational myths that shaped the psychological and cultural landscape of
+            ancient Kerala.</p>
+    </div>
+
+    <div class="container mb-5 reveal" style="animation-delay: 0.2s;">
+        <div class="row">
+            <div class="col-lg-4 mb-4 mb-lg-0">
+                <div class="list-group folklore-list sticky-top" style="top: 120px;" id="list-tab" role="tablist">
+                    <a class="list-group-item list-group-item-action active" id="list-yakshi-list" data-bs-toggle="list"
+                        href="#list-yakshi" role="tab" aria-controls="list-yakshi">Yakshi</a>
+                    <a class="list-group-item list-group-item-action" id="list-theyyam-list" data-bs-toggle="list"
+                        href="#list-theyyam" role="tab" aria-controls="list-theyyam">Theyyam</a>
+                    <a class="list-group-item list-group-item-action" id="list-kathanar-list" data-bs-toggle="list"
+                        href="#list-kathanar" role="tab" aria-controls="list-kathanar">Kadamattathu Kathanar</a>
+                    <a class="list-group-item list-group-item-action" id="list-bhranthan-list" data-bs-toggle="list"
+                        href="#list-bhranthan" role="tab" aria-controls="list-bhranthan">Naranathu Bhranthan</a>
+                    <a class="list-group-item list-group-item-action" id="list-panthirukulam-list" data-bs-toggle="list"
+                        href="#list-panthirukulam" role="tab" aria-controls="list-panthirukulam">Parayi Petta
+                        Panthirukulam</a>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="tab-content p-4 p-md-5" id="nav-tabContent">
+
+                    <!-- Yakshi -->
+                    <div class="tab-pane fade show active" id="list-yakshi" role="tabpanel"
+                        aria-labelledby="list-yakshi-list">
+                        <h3 class="mb-4" style="color: var(--accent-gold);">Yakshi <span
+                                style="font-size:0.75rem; font-family:'Inter', sans-serif; letter-spacing: 2px; color:rgba(255,255,255,0.5); float:right; margin-top:10px;">STUDY
+                                MATERIAL</span></h3>
+                        <div class="accordion accordion-flush folklore-accordion" id="accordionYakshi">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#y1"
+                                        aria-expanded="true">Overview</button></h2>
+                                <div id="y1" class="accordion-collapse collapse show" data-bs-parent="#accordionYakshi">
+                                    <div class="accordion-body">
+                                        <p>An introduction to the mystic entities known as Yakshis, ethereal and
+                                            sometimes malevolent spirits from Kerala's ancient lore, often associated
+                                            with palm trees (specifically the locally revered Aliyenthi or Pala tree),
+                                            twilight, and mesmerizing beauty.</p>
+                                        <p>Far from simple ghosts, Yakshis embody the psychological terror of the
+                                            untamed wilderness. They blur the lines between enchanting beauty and
+                                            blood-curdling horror, reflecting society's deep-seated anxieties towards
+                                            betrayal, unrequited love, and the power of feminine rage.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#y2">Origin</button></h2>
+                                <div id="y2" class="accordion-collapse collapse" data-bs-parent="#accordionYakshi">
+                                    <div class="accordion-body">
+                                        Rooted in early Dravidian, Buddhist, and Hindu mythologies, the myth of the
+                                        Yakshi originally depicted nature spirits guarding the treasures buried within
+                                        the earth. Over centuries, as they localized into Kerala's folklore, they
+                                        morphed into tragic figures—women who were deeply wronged, murdered, or betrayed
+                                        in their mortal lives, returning from the grave with an insatiable thirst for
+                                        vengeance against men. This evolution highlights a transition from agrarian
+                                        guardians to moralistic bogeymen meant to enforce societal virtues.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#y3">Key Stories</button></h2>
+                                <div id="y3" class="accordion-collapse collapse" data-bs-parent="#accordionYakshi">
+                                    <div class="accordion-body">
+                                        <p><strong>Kalliyankattu Neeli:</strong> Perhaps the most famous Yakshi legend
+                                            in Kerala. Betrayed and murdered by her scheming husband in a desolate
+                                            forest, Neeli reincarnated as a fearsome, bloodthirsty spirit. Her tale is
+                                            one of tragic heartbreak culminating in supernatural retribution.</p>
+                                        <p><strong>Kanjirottu Yakshi:</strong> A beautiful courtesan who was murdered,
+                                            she turned into a vengeful spirit who wreaked havoc until she was eventually
+                                            subdued and installed as a subordinate deity (Yakshambalam), illustrating
+                                            the concept of containing and venerating chaotic energy.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#y4">Cultural Meaning</button></h2>
+                                <div id="y4" class="accordion-collapse collapse" data-bs-parent="#accordionYakshi">
+                                    <div class="accordion-body">
+                                        Yakshi tales serve as powerful moral paradigms regarding lust, betrayal, and the
+                                        fearsome aspects of untamed nature. They reveal traditional societal anxieties,
+                                        acting as cautionary tales warning men against wandering alone at night or
+                                        giving in to illicit desires. Furthermore, the temples dedicated to subdued
+                                        Yakshis reflect an indigenous theological practice of acknowledging, respecting,
+                                        and neutralizing malevolent forces rather than merely destroying them.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#y5">Summary</button></h2>
+                                <div id="y5" class="accordion-collapse collapse" data-bs-parent="#accordionYakshi">
+                                    <div class="accordion-body">
+                                        Yakshis represent the duality of beauty and terror in Kerala's folklore. They
+                                        preserve ancient oral traditions that warn against venturing into the dark and
+                                        unknown forces of nature, immortalizing the tragic empowerment of wronged women
+                                        through supernatural mythology.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Theyyam -->
+                    <div class="tab-pane fade" id="list-theyyam" role="tabpanel" aria-labelledby="list-theyyam-list">
+                        <h3 class="mb-4" style="color: var(--accent-gold);">Theyyam <span
+                                style="font-size:0.75rem; font-family:'Inter', sans-serif; letter-spacing: 2px; color:rgba(255,255,255,0.5); float:right; margin-top:10px;">STUDY
+                                MATERIAL</span></h3>
+                        <div class="accordion accordion-flush folklore-accordion" id="accordionTheyyam">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#t1"
+                                        aria-expanded="true">Overview</button></h2>
+                                <div id="t1" class="accordion-collapse collapse show"
+                                    data-bs-parent="#accordionTheyyam">
+                                    <div class="accordion-body">
+                                        <p>A staggering, visceral ritual form of worship native to North Malabar.
+                                            Theyyam incorporates frenetic dance, hypnotic mime, and primal music
+                                            characterized by the Chenda (drum). It is performed specifically to connect
+                                            mortals directly with the divine—to not just pray to a deity, but to
+                                            interact with one incarnate.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#t2">Origin & Preparation</button>
+                                </h2>
+                                <div id="t2" class="accordion-collapse collapse" data-bs-parent="#accordionTheyyam">
+                                    <div class="accordion-body">
+                                        <p>Rooted in pre-Hindu indigenous traditions and tribal animism, Theyyam
+                                            absorbed various mythological and religious sub-currents over millennia. The
+                                            performer (Koladhari) prepares for days, observing strict penance and
+                                            abstinence known as <em>Vrutham</em>.</p>
+                                        <p>The transformation involves elaborate face painting (<em>Mukhathezhuthu</em>)
+                                            and towering headgear (<em>Mudi</em>) that can reach several feet in height.
+                                            During the pivotal moment of trance (<em>Urappal</em>), the performer loses
+                                            his mortal identity and becomes the living embodiment of the deity.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#t3">Key Forms & Stories</button></h2>
+                                <div id="t3" class="accordion-collapse collapse" data-bs-parent="#accordionTheyyam">
+                                    <div class="accordion-body">
+                                        <p>There are over 400 distinct Theyyams, each with its own myth (<em>Thottam
+                                                Pattu</em>):</p>
+                                        <ul>
+                                            <li><strong>Muthappan:</strong> The rebel hunter deity who drinks toddy and
+                                                cares for the marginalized. He is the most universally accessible deity
+                                                in the region.</li>
+                                            <li><strong>Kathivanur Veeran:</strong> A legendary mortal warrior whose
+                                                martial prowess and tragic death elevated him to godhood.</li>
+                                            <li><strong>Muchilot Bhagavathi:</strong> A deeply moving Goddess form,
+                                                representing female purity, intelligence, and a tragic fiery end.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#t4">Cultural Meaning</button></h2>
+                                <div id="t4" class="accordion-collapse collapse" data-bs-parent="#accordionTheyyam">
+                                    <div class="accordion-body">
+                                        Theyyam's most revolutionary aspect is its inversion of caste hierarchies. In a
+                                        historically rigid caste-based society, the deities are exclusively performed by
+                                        individuals from historically oppressed castes. When the trance takes hold,
+                                        highest-ranking Brahmins and feudal lords bow down seeking blessings and counsel
+                                        from the very individual they might socially shun outside the ritual timeline.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#t5">Summary</button></h2>
+                                <div id="t5" class="accordion-collapse collapse" data-bs-parent="#accordionTheyyam">
+                                    <div class="accordion-body">
+                                        Theyyam is an unparalleled living tradition—a vibrant, visually stunning art and
+                                        religious form bridging humanity and divinity, acting as an ancient mechanism
+                                        for social equality and preserving Kerala's deep ancestral memories.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kadamattathu Kathanar -->
+                    <div class="tab-pane fade" id="list-kathanar" role="tabpanel" aria-labelledby="list-kathanar-list">
+                        <h3 class="mb-4" style="color: var(--accent-gold);">Kadamattathu Kathanar <span
+                                style="font-size:0.75rem; font-family:'Inter', sans-serif; letter-spacing: 2px; color:rgba(255,255,255,0.5); float:right; margin-top:10px;">STUDY
+                                MATERIAL</span></h3>
+                        <div class="accordion accordion-flush folklore-accordion" id="accordionKathanar">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#k1"
+                                        aria-expanded="true">Overview</button></h2>
+                                <div id="k1" class="accordion-collapse collapse show"
+                                    data-bs-parent="#accordionKathanar">
+                                    <div class="accordion-body">
+                                        The legend of a remarkable Christian priest (Kathanar), renowned for his command
+                                        over magical arts, alchemy, and absolute mastery of the supernatural. He is
+                                        essentially the "Sorcerer Supreme" of Kerala's folklore.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#k2">Origin</button></h2>
+                                <div id="k2" class="accordion-collapse collapse" data-bs-parent="#accordionKathanar">
+                                    <div class="accordion-body">
+                                        Derived from the historical figure of a Syriac Orthodox priest associated with
+                                        the famous Kadamattom Church, believed to have lived around the 9th or 10th
+                                        century. Left orphaned, he was raised by the church but wandered into the deep
+                                        forests where he was taken in by the Mala Arayas (a hill tribe deep within the
+                                        Western Ghats). From them, he mastered ancient indigenous magic before returning
+                                        to his parish.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#k3">Key Stories</button></h2>
+                                <div id="k3" class="accordion-collapse collapse" data-bs-parent="#accordionKathanar">
+                                    <div class="accordion-body">
+                                        <p><strong>Subduing Kalliyankattu Neeli:</strong> Kathanar's most legendary feat
+                                            was ending the reign of terror of the ferocious Yakshi, Neeli. Using his
+                                            arcane knowledge, he chased her and pinned her soul to a tree by driving
+                                            heavy iron nails through her hair, rendering her powerless.</p>
+                                        <p>He is also credited with authoring mystical texts and defeating rival dark
+                                            sorcerers, employing his skills not to harm, but to heal communities plagued
+                                            by dark forces and ailments.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#k4">Cultural Meaning</button></h2>
+                                <div id="k4" class="accordion-collapse collapse" data-bs-parent="#accordionKathanar">
+                                    <div class="accordion-body">
+                                        This narrative brilliantly synthesizes early Syrian Christian traditions in
+                                        Kerala with native occult paradigms. It demonstrates historical cross-cultural
+                                        integration and religious syncretism, where a Christian priest achieves
+                                        legendary status by mastering tribal Hindu mysticism, showcasing an era of deep,
+                                        mutual theological respect.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#k5">Summary</button></h2>
+                                <div id="k5" class="accordion-collapse collapse" data-bs-parent="#accordionKathanar">
+                                    <div class="accordion-body">
+                                        A fascinating historical and mythical figure who symbolizes the ultimate triumph
+                                        of spiritual authority and benevolent mysticism over chaotic, dark forces in
+                                        folklore.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Naranathu Bhranthan -->
+                    <div class="tab-pane fade" id="list-bhranthan" role="tabpanel"
+                        aria-labelledby="list-bhranthan-list">
+                        <h3 class="mb-4" style="color: var(--accent-gold);">Naranathu Bhranthan <span
+                                style="font-size:0.75rem; font-family:'Inter', sans-serif; letter-spacing: 2px; color:rgba(255,255,255,0.5); float:right; margin-top:10px;">STUDY
+                                MATERIAL</span></h3>
+                        <div class="accordion accordion-flush folklore-accordion" id="accordionBhranthan">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#n1"
+                                        aria-expanded="true">Overview</button></h2>
+                                <div id="n1" class="accordion-collapse collapse show"
+                                    data-bs-parent="#accordionBhranthan">
+                                    <div class="accordion-body">
+                                        Translating to the "madman of Naranathu", he is arguably the most famous
+                                        philosophical figure in Malayalam lore. He is celebrated as a divine philosopher
+                                        manifesting unconventional, Zen-like wisdom through highly eccentric, baffling
+                                        actions.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#n2">Origin</button></h2>
+                                <div id="n2" class="accordion-collapse collapse" data-bs-parent="#accordionBhranthan">
+                                    <div class="accordion-body">
+                                        He originates as one of the twelve miraculous children of the legendary
+                                        <i>Parayi Petta Panthirukulam</i> lineage. Abandoned at birth alongside his
+                                        siblings, he was found and raised by a Namboodiri (orthodox Brahmin) family in
+                                        Naranathu, near Thiruvegappura. Endowed with supernatural perception, his
+                                        actions were deemed 'mad' by ordinary mortals.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#n3">Key Stories</button></h2>
+                                <div id="n3" class="accordion-collapse collapse" data-bs-parent="#accordionBhranthan">
+                                    <div class="accordion-body">
+                                        <p><strong>The Rayiranellur Stone:</strong> His defining act was a daily routine
+                                            of suffering immensely to roll a massive boulder up the steep Rayiranellur
+                                            mountain, only to instantly let it go at the summit and watch it crash down,
+                                            breaking into peals of joyous, echoing laughter.</p>
+                                        <p><strong>Encounter with Bhadrakali:</strong> Unafraid of anything, he slept in
+                                            cemeteries (Chudukadu). When the fearsome Goddess Kali appeared and demanded
+                                            he leave, he refused. Appreciating his fearlessness, she offered a boon.
+                                            Dismissively, he asked to shift his elephantiasis swelling from his left leg
+                                            to his right, mocking the concept of divine miracles being used for
+                                            superficial physical changes.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#n4">Cultural Meaning</button></h2>
+                                <div id="n4" class="accordion-collapse collapse" data-bs-parent="#accordionBhranthan">
+                                    <div class="accordion-body">
+                                        His boulder ritual brutally satires human materialism—we struggle endlessly to
+                                        push our wealth and status up the hill of life, only for it to eventually
+                                        collapse. He embodies the futility of human ego, greed, and attachments,
+                                        presenting a profound philosophical detachment akin to Diogenes or Zen masters.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#n5">Summary</button></h2>
+                                <div id="n5" class="accordion-collapse collapse" data-bs-parent="#accordionBhranthan">
+                                    <div class="accordion-body">
+                                        A revered eccentric intellect whose life teaches deep philosophical lessons
+                                        about the temporal, absurd nature of human struggle.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Parayi Petta Panthirukulam -->
+                    <div class="tab-pane fade" id="list-panthirukulam" role="tabpanel"
+                        aria-labelledby="list-panthirukulam-list">
+                        <h3 class="mb-4" style="color: var(--accent-gold);">Parayi Petta Panthirukulam <span
+                                style="font-size:0.75rem; font-family:'Inter', sans-serif; letter-spacing: 2px; color:rgba(255,255,255,0.5); float:right; margin-top:10px;">STUDY
+                                MATERIAL</span></h3>
+                        <div class="accordion accordion-flush folklore-accordion" id="accordionPanthirukulam">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#p1"
+                                        aria-expanded="true">Overview</button></h2>
+                                <div id="p1" class="accordion-collapse collapse show"
+                                    data-bs-parent="#accordionPanthirukulam">
+                                    <div class="accordion-body">
+                                        The paramount foundational folklore recounting the "twelve clans born of a
+                                        Pariah woman," laying the groundwork for much of Kerala's secular mythology and
+                                        literary heritage.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#p2">Origin</button></h2>
+                                <div id="p2" class="accordion-collapse collapse"
+                                    data-bs-parent="#accordionPanthirukulam">
+                                    <div class="accordion-body">
+                                        The epic arises from the myth of Vararuchi, a highly intellectual Brahmin
+                                        scholar at King Vikramaditya's court. Following a prophecy, he inadvertently
+                                        marries a 'low-caste' Pariah woman named Panchami. As they travel across Kerala
+                                        on a pilgrimage, she gives birth to twelve children over the years.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#p3">Key Stories</button></h2>
+                                <div id="p3" class="accordion-collapse collapse"
+                                    data-bs-parent="#accordionPanthirukulam">
+                                    <div class="accordion-body">
+                                        <p>Upon each birth, Vararuchi asks if the baby has a mouth. When Panchami says
+                                            yes, he replies, "God who gave the mouth will provide the food," forcing her
+                                            to abandon the infant by the roadside. Eventually, the children are found
+                                            and raised by different families representing almost every social and
+                                            professional caste in Kerala.</p>
+                                        <p><strong>The Siblings:</strong> They include Mezhathol Agnihotri (the orthodox
+                                            Brahmin head), Pakkanar (the wise basket weaver), Perumthachan (the
+                                            unparalleled master carpenter), Rajakan (washerman), Vallon (low-caste
+                                            leader), and Naranathu Bhranthan (the mad philosopher). Despite their vastly
+                                            different upbringings, they recognized their brotherhood, assembling
+                                            annually at Agnihotri's home to honor their parentage and conduct grand
+                                            rituals oblivious to caste laws.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#p4">Cultural Meaning</button></h2>
+                                <div id="p4" class="accordion-collapse collapse"
+                                    data-bs-parent="#accordionPanthirukulam">
+                                    <div class="accordion-body">
+                                        It is an unbelievably potent, centuries-old allegory advocating for absolute
+                                        social equality. Originating in a deeply hierarchical society, the lore dictates
+                                        that regardless of one's current social standing or profession (from Brahmin to
+                                        Pariah), everyone is ultimately born of the same mother. It stresses that wisdom
+                                        and greatness are universal, transcending any man-made hierarchical divisions.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#p5">Summary</button></h2>
+                                <div id="p5" class="accordion-collapse collapse"
+                                    data-bs-parent="#accordionPanthirukulam">
+                                    <div class="accordion-body">
+                                        The epicentre of Kerala's secular folklore, beautifully unifying disparate
+                                        cultural and caste threads into a singular, undeniably egalitarian narrative of
+                                        common descent.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Gamification Box at Bottom -->
+        <div class="row mt-5 pt-4 justify-content-center">
+            <div class="col-lg-10">
+                <div class="text-center p-4 p-md-5"
+                    style="background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(179, 139, 77, 0.4); border-radius: 8px;">
+                    <span class="realm-label mb-2" style="color: var(--accent-gold);">Gamification Possibility</span>
+                    <h3 class="mb-4 pb-2" style="font-family: 'Tenor Sans', serif;">Unlock Achievements</h3>
+                    <div class="row justify-content-center text-start g-4">
+                        <div class="col-md-5">
+                            <div class="d-flex align-items-center gap-3 p-3 rounded"
+                                style="background: rgba(0,0,0,0.3); border-left: 3px solid var(--accent-gold);">
+                                <div class="badge-icon" style="font-size: 2rem;">🏆</div>
+                                <div>
+                                    <h6 class="mb-1 text-uppercase"
+                                        style="letter-spacing: 1px; color: var(--accent-gold); font-size: 0.8rem;">
+                                        Folklore Explorer</h6>
+                                    <p class="small mb-0 opacity-75" style="font-size: 0.75rem;">Complete 3 folklore
+                                        topics</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="d-flex align-items-center gap-3 p-3 rounded"
+                                style="background: rgba(0,0,0,0.3); border-left: 3px solid var(--accent-gold);">
+                                <div class="badge-icon" style="font-size: 2rem;">🏆</div>
+                                <div>
+                                    <h6 class="mb-1 text-uppercase"
+                                        style="letter-spacing: 1px; color: var(--accent-gold); font-size: 0.8rem;">
+                                        Heritage Scholar</h6>
+                                    <p class="small mb-0 opacity-75" style="font-size: 0.75rem;">Complete the folklore
+                                        module</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 ECOHERITAGE KERALA &mdash; PRESERVING THE LEGACY</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>

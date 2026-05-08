@@ -1,0 +1,327 @@
+{% extends 'teacher/teacher_base.html' %}
+{% load static %}
+
+{% block title %}AI Quiz Generator - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}Assessment Forge{% endblock %}
+{% block page_subtitle %}Synthesize curriculum-based assessments using automated neural extraction.{% endblock %}
+
+{% block teacher_extra_css %}
+<style>
+    /* Glassmorphism Effect */
+    .glass-card-p {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        border-radius: 24px;
+        padding: 30px;
+        transition: 0.4s;
+    }
+    .glass-card-p:hover {
+        transform: translateY(-5px);
+        border-color: var(--accent-gold);
+    }
+
+    /* --- Status Indicators --- */
+    .status-pill-p {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 16px;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .status-ready { background: #e6f7ed; color: #1a7f37; border: 1px solid #1a7f3733; }
+    .status-waiting { background: #fff8e6; color: #9a6700; border: 1px solid #9a670033; }
+    .status-error { background: #ffebe9; color: #cf222e; border: 1px solid #cf222e33; }
+
+    .pulse-p {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+        position: relative;
+    }
+    .pulse-p::after {
+        content: '';
+        position: absolute;
+        width: 100%; height: 100%;
+        border-radius: 50%; background: currentColor;
+        animation: pulse-ring 2s infinite;
+    }
+    @keyframes pulse-ring {
+        0% { transform: scale(1); opacity: 0.7; }
+        100% { transform: scale(3); opacity: 0; }
+    }
+
+    /* Preview Questions */
+    .question-card-p {
+        background: white;
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 20px;
+        transition: 0.3s;
+    }
+    .option-item-p {
+        padding: 12px 15px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        background: rgba(0,0,0,0.02);
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .option-item-p.correct {
+        background: var(--accent-gold-light);
+        border: 1px solid var(--accent-gold);
+        color: var(--accent-gold);
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block teacher_content %}
+<div class="ai-generator-wrapper">
+    
+    <div class="filter-bar-p mb-4 d-flex justify-content-between align-items-center">
+        <h3 class="card-label-p m-0">Neural Assessment Core</h3>
+        <div class="d-flex gap-2">
+            <a href="{% url 'teacher_my_quizzes' %}" class="btn btn-sm btn-outline-dark rounded-pill px-4 fw-bold">
+                <i class="fa-solid fa-vault me-2 text-gold-p"></i> Quiz Bank
+            </a>
+            <a href="{% url 'teacher_manual_quiz' %}" class="btn btn-sm btn-outline-dark rounded-pill px-4 fw-bold">
+                <i class="fa-solid fa-pen-nib me-2 text-gold-p"></i> Manual Draft
+            </a>
+        </div>
+    </div>
+
+    <div class="bento-grid-p">
+        <!-- Configuration Form -->
+        <div class="bento-col-8">
+            <div class="glass-card-p">
+                <h5 class="fw-bold mb-4"><i class="fa-solid fa-wand-magic-sparkles me-2 text-gold-p"></i> Generator Settings</h5>
+                
+                <form id="quizGeneratorForm">
+                    {% csrf_token %}
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Target Stream</label>
+                            <select class="form-select rounded-pill px-3" id="classSelect" name="class_id" required>
+                                <option value="">Select a class...</option>
+                                {% for class in teacher_classes %}
+                                <option value="{{ class.id }}" {% if selected_class.id == class.id %}selected{% endif %}>
+                                    {{ class.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Source Material</label>
+                            <select class="form-select rounded-pill px-3" id="materialSelect" name="study_material_id" required>
+                                <option value="">Select study material...</option>
+                                {% for material in class_study_materials %}
+                                <option value="{{ material.id }}" data-length="{{ material.content_text|length }}">
+                                    {{ material.title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Question Volume</label>
+                            <input type="number" class="form-control rounded-pill px-3" name="num_questions" value="6" min="1" max="10">
+                        </div>
+                        <input type="hidden" name="content_type" value="class">
+                        
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn-p-pill btn-gold-p w-100 py-3" id="generateBtn">
+                                <i class="fa-solid fa-bolt me-2"></i> Synthesize Assessment
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="text-center mt-5" id="loadingSpinner" style="display: none;">
+                    <div class="spinner-grow text-gold-p mb-3" role="status"></div>
+                    <h5 class="fw-bold">Analyzing Neural Patterns...</h5>
+                    <p class="text-muted small">AI is crafting contextual questions from your material.</p>
+                </div>
+
+                <div class="alert alert-danger mt-4 rounded-4" id="errorMessage" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Status & Stats -->
+        <div class="bento-col-4">
+            <div class="glass-card-p h-100 d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <span class="small fw-bold text-muted text-uppercase">Engine Status</span>
+                    <div id="modelStatusContainer">
+                        <div class="status-pill-p status-waiting" id="modelStatus">
+                            <span class="pulse-p"></span> Checking...
+                        </div>
+                    </div>
+                </div>
+
+                <div id="preloadContainer" style="display:none;" class="mt-auto">
+                    <p class="small text-muted mb-3">Assessment core (Gemma) requires a synchronization heartbeat.</p>
+                    <button type="button" class="btn btn-sm btn-dark rounded-pill w-100 py-2" id="preloadBtn">Sync Engine</button>
+                </div>
+
+                <div id="activeModelInfo" style="display:none;" class="mt-auto">
+                    <div class="p-3 bg-light rounded-4">
+                        <h6 class="small fw-bold mb-2">Active Configuration</h6>
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>Hardware:</span> <span id="deviceStatus" class="fw-bold text-dark">CUDA</span>
+                        </div>
+                        <div class="d-flex justify-content-between small text-muted mt-1">
+                            <span>Latency:</span> <span class="fw-bold text-dark">~240ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Section (Full Width) -->
+        <div class="bento-col-12" id="generatedQuizSection" style="display: none;">
+            <div class="bento-card-p mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-5">
+                    <h4 class="fw-bold m-0">Draft Review</h4>
+                    <button type="button" class="btn btn-sm btn-outline-dark rounded-pill" id="closePreview">Dismiss</button>
+                </div>
+                
+                <div id="quizQuestions" class="row"></div>
+                
+                <div class="d-flex gap-3 mt-5 pt-4 border-top">
+                    <button type="button" class="btn-p-pill btn-outline-p px-5" id="saveDraftBtn">Save as Draft</button>
+                    <button type="button" class="btn-p-pill btn-gold-p px-5" id="submitApprovalBtn">Publish Assessment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<input type="hidden" id="currentQuizId" value="">
+{% endblock %}
+
+{% block teacher_extra_js %}
+<script>
+$(document).ready(function() {
+    checkModelStatus();
+
+    $('#classSelect').change(function() {
+        const classId = $(this).val();
+        if (classId) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('class_id', classId);
+            window.location.href = url.toString();
+        }
+    });
+
+    $('#quizGeneratorForm').submit(function(e) {
+        e.preventDefault();
+        const materialId = $('#materialSelect').val();
+        const materialOption = $('#materialSelect option:selected');
+        const contentLength = parseInt(materialOption.data('length') || 0);
+
+        if (contentLength < 100) {
+            $('#errorMessage').text('Content too short. Minimum 100 chars required.').show();
+            return;
+        }
+
+        $('#generateBtn').prop('disabled', true);
+        $('#loadingSpinner').show();
+        $('#errorMessage').hide();
+
+        $.ajax({
+            url: '{% url "teacher_generate_quiz" %}',
+            method: 'POST',
+            data: $(this).serialize(),
+            success: function(response) {
+                if (response.success) {
+                    $('#currentQuizId').val(response.quiz_id);
+                    displayGeneratedQuestions(response.questions);
+                    $('#generatedQuizSection').fadeIn();
+                } else {
+                    $('#errorMessage').text(response.error).show();
+                }
+            },
+            error: function(xhr) {
+                $('#errorMessage').text(xhr.responseJSON?.error || 'Neural Link Error').show();
+            },
+            complete: function() {
+                $('#generateBtn').prop('disabled', false);
+                $('#loadingSpinner').hide();
+            }
+        });
+    });
+
+    $('#closePreview').click(function() { $('#generatedQuizSection').fadeOut(); });
+
+    $('#saveDraftBtn').click(function() { saveQuiz('draft'); });
+    $('#submitApprovalBtn').click(function() { saveQuiz('submit'); });
+
+    function saveQuiz(action) {
+        const quizId = $('#currentQuizId').val();
+        if (!quizId) return;
+        $.ajax({
+            url: '{% url "teacher_save_quiz" quiz_id=0 %}'.replace('0', quizId),
+            method: 'POST',
+            data: { action: action, csrfmiddlewaretoken: '{{ csrf_token }}' },
+            success: function(response) {
+                if (response.success) {
+                    alert('Action successful!');
+                    window.location.href = '{% url "teacher_my_quizzes" %}';
+                }
+            }
+        });
+    }
+
+    function displayGeneratedQuestions(questions) {
+        let html = '';
+        questions.forEach(function(q, index) {
+            html += '<div class="col-md-6">';
+            html += '  <div class="question-card-p">';
+            html += '    <div class="small fw-bold text-muted mb-2 text-uppercase">Question ' + (index + 1) + '</div>';
+            html += '    <h6 class="fw-bold mb-3">' + q.text + '</h6>';
+            html += '    <div class="options-container-p">';
+            q.options.forEach(function(opt) {
+                const isCorrect = opt.is_correct || opt.correct;
+                html += '      <div class="option-item-p ' + (isCorrect ? 'correct' : '') + '">';
+                html += '        <span>' + opt.text + '</span>';
+                if (isCorrect) html += ' <i class="fa-solid fa-check ms-auto"></i>';
+                html += '      </div>';
+            });
+            html += '    </div></div></div>';
+        });
+        $('#quizQuestions').html(html);
+    }
+
+    function checkModelStatus() {
+        $.get('{% url "check_model_status" %}', function(data) {
+            if (data.loaded) {
+                $('#modelStatusContainer').html('<div class="status-pill-p status-ready"><span class="pulse-p"></span> Ready</div>');
+                $('#deviceStatus').text(data.device.toUpperCase());
+                $('#activeModelInfo').fadeIn();
+                $('#preloadContainer').hide();
+            } else {
+                $('#modelStatusContainer').html('<div class="status-pill-p status-error">Offline</div>');
+                $('#preloadContainer').fadeIn();
+            }
+        });
+    }
+
+    $('#preloadBtn').click(function() {
+        $(this).prop('disabled', true).text('Linking...');
+        $.post('{% url "preload_model" %}', { csrfmiddlewaretoken: '{{ csrf_token }}' }, function() { checkModelStatus(); });
+    });
+});
+</script>
+{% endblock %}

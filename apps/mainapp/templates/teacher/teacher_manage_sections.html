@@ -1,0 +1,95 @@
+{% extends 'teacher/teacher_base.html' %}
+
+{% block title %}Section Management - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}Academic Domains{% endblock %}
+{% block page_subtitle %}High-level categorization for curriculum organization and content mapping.{% endblock %}
+
+{% block teacher_extra_css %}
+<style>
+    .section-form-p {
+        background: white;
+        border-radius: 24px;
+        padding: 35px;
+        border: 1px solid var(--card-border);
+        box-shadow: var(--shadow-sm);
+    }
+    .section-item-card-p {
+        border-top: 4px solid var(--accent-gold);
+        transition: 0.3s;
+    }
+    .section-item-card-p:hover { transform: translateY(-5px); }
+</style>
+{% endblock %}
+
+{% block teacher_content %}
+<div class="manage-sections-wrapper">
+    
+    {% if messages %}
+    <div class="alert-panel">
+        {% for message in messages %}
+        <div class="alert-box approved" style="background: white; border: 1px solid var(--card-border);">
+            <i class="fa-solid fa-circle-check text-success"></i>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="bento-grid-p">
+        <!-- Add Section Form -->
+        <div class="bento-col-4">
+            <div class="section-form-p h-100">
+                <h4 class="card-label-p">New Domain Registry</h4>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Domain Name</label>
+                        <input type="text" name="name" class="form-control rounded-pill px-3" required placeholder="e.g. Flora & Fauna">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Strategic Description</label>
+                        <textarea name="description" class="form-control rounded-4" rows="5" required placeholder="Scope of this domain..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Banner URL (Optional)</label>
+                        <input type="url" name="image_url" class="form-control rounded-pill px-3" placeholder="https://...">
+                    </div>
+                    <button type="submit" class="btn-p-pill btn-gold-p w-100 py-3 mt-3">Register Domain</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sections List -->
+        <div class="bento-col-8">
+            <h4 class="card-label-p mb-4">Active Academic Domains</h4>
+            <div class="bento-grid-p">
+                {% for section in sections %}
+                <div class="bento-col-6 bento-card-p section-item-card-p">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="fw-bold m-0">{{ section.name }}</h5>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-gold-light text-gold-p px-2 py-1 small fw-bold"><i class="fa-solid fa-book me-1"></i> {{ section.topics.count }}</span>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-4">{{ section.description|truncatechars:120 }}</p>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">
+                        <div class="small text-muted fw-bold">{{ section.questions.count }} Active Trials</div>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'teacher_manage_topics_by_section' section.id %}" class="btn btn-sm btn-dark rounded-pill px-3">Topics</a>
+                            <a href="{% url 'teacher_add_quiz_question' %}" class="btn btn-sm btn-outline-dark rounded-pill px-3">Add Qs</a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="bento-col-12 bento-card-p text-center py-5">
+                    <p class="text-muted italic">No academic domains registered yet.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

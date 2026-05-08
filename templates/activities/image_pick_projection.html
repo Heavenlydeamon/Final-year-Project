@@ -1,0 +1,70 @@
+<style>
+    .image-pick-container {
+        display: flex;
+        justify-content: center;
+        gap: 3rem;
+        width: 100%;
+        padding: 2rem;
+        flex-wrap: wrap;
+    }
+    .pick-option {
+        background: var(--glass);
+        border: 2px solid var(--glass-border);
+        padding: 2rem;
+        border-radius: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        width: 350px;
+        transition: all 0.4s ease;
+    }
+    .pick-option img {
+        width: 100%;
+        height: 250px;
+        object-fit: cover;
+        border-radius: 1.5rem;
+    }
+    .pick-label {
+        font-size: 28px;
+        font-weight: 700;
+        text-align: center;
+    }
+    .pick-option.correct {
+        border-color: var(--accent-green);
+        background: rgba(16, 185, 129, 0.1);
+        transform: scale(1.05);
+        box-shadow: 0 0 50px rgba(16, 185, 129, 0.3);
+    }
+    .pick-option.wrong {
+        opacity: 0.4;
+        filter: grayscale(0.8);
+    }
+</style>
+
+<div class="image-pick-container">
+    {% for option in activity.items.options %}
+    <div class="pick-option" id="pick-{{ option.id }}">
+        {% if option.image %}
+        <img src="{{ option.image }}" alt="{{ option.label }}">
+        {% endif %}
+        <span class="pick-label">{{ option.label }}</span>
+    </div>
+    {% endfor %}
+</div>
+
+{{ activity.answer|json_script:"pick-answer" }}
+<script>
+function revealImagePick() {
+    const correctId = JSON.parse(document.getElementById('pick-answer').textContent);
+    
+    document.querySelectorAll('.pick-option').forEach(el => {
+        if (el.id === `pick-${correctId}`) {
+            el.classList.add('correct');
+            el.innerHTML += '<div style="color: var(--accent-green); font-size: 64px; margin-top: 1rem;">✔</div>';
+        } else {
+            el.classList.add('wrong');
+        }
+    });
+}
+</script>

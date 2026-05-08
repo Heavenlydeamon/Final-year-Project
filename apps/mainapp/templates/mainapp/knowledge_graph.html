@@ -1,0 +1,173 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Knowledge Graph | Eco Heritage{% endblock %}
+
+{% block extra_css %}
+<style>
+    .graph-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0;
+        background: rgba(15, 20, 25, 0.9);
+        backdrop-filter: blur(20px);
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+        position: relative;
+    }
+
+    #3d-graph {
+        width: 100%;
+        height: 700px;
+    }
+
+    .graph-controls {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(0,0,0,0.5);
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.1);
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #ddd;
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+
+    .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+
+    .node-tooltip {
+        position: absolute;
+        background: rgba(20, 25, 30, 0.95);
+        color: white;
+        padding: 10px 15px;
+        border-radius: 8px;
+        border: 1px solid var(--accent-gold);
+        pointer-events: none;
+        font-size: 0.9rem;
+        opacity: 0;
+        transition: opacity 0.2s;
+        transform: translate(-50%, -100%);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        z-index: 20;
+        text-align: center;
+    }
+
+    .node-tooltip h5 {
+        margin: 0 0 5px 0;
+        color: var(--accent-gold);
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="text-center mb-4">
+        <h1 class="display-4 fw-bold gradient-text">Heritage Knowledge Graph</h1>
+        <p class="lead text-muted">Explore the hidden connections between Kerala's biodiversity, artforms, and history.</p>
+    </div>
+
+    <div class="graph-container">
+        <div id="3d-graph"></div>
+        
+        <div class="graph-controls">
+            <h6 class="text-white mb-3" style="font-family:'Outfit'">Graph Legend</h6>
+            <div class="legend-item">
+                <div class="legend-color" style="background:#eca028; box-shadow: 0 0 10px #eca028;"></div>
+                <span>Core Heritage Topic</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background:#5ee2c1; box-shadow: 0 0 10px #5ee2c1;"></div>
+                <span>Linked Concept</span>
+            </div>
+            <div class="mt-3 text-muted" style="font-size: 0.75rem;">Scroll to zoom. Drag to move.</div>
+        </div>
+
+        <div id="graph-tooltip" class="node-tooltip"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Using Force Graph 2D component which builds on D3 -->
+<script src="https://unpkg.com/force-graph"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const elem = document.getElementById('3d-graph');
+        const tooltip = document.getElementById('graph-tooltip');
+
+        fetch("{% url 'knowledge_graph_data' %}")
+            .then(res => res.json())
+            .then(data => {
+                const Graph = ForceGraph()(elem)
+                    .graphData(data)
+                    .nodeRelSize(6)
+                    .nodeVal(node => node.val)
+                    .nodeLabel('') // Disable default tooltip 
+                    .nodeColor(node => node.group === 1 ? '#eca028' : '#5ee2c1')
+                    .linkColor(() => 'rgba(255,255,255,0.2)')
+                    .linkWidth(link => link.value)
+                    .onNodeHover(node => {
+                        elem.style.cursor = node ? 'pointer' : null;
+                        if (node) {
+                            tooltip.innerHTML = `<h5>${node.name}</h5><small>${node.group === 1 ? 'Topic' : 'Concept'}</small>`;
+                            tooltip.style.opacity = 1;
+                        } else {
+                            tooltip.style.opacity = 0;
+                        }
+                    })
+                    .onBackgroundClick(() => tooltip.style.opacity = 0);
+                
+                // Track mouse movement to move the custom tooltip
+                elem.addEventListener('mousemove', e => {
+                    if (tooltip.style.opacity === '1') {
+                        // Position slightly above the cursor
+                        tooltip.style.left = e.pageX + 'px';
+                        tooltip.style.top = (e.pageY - 20) + 'px';
+                    }
+                });
+
+                // Add nice glowing effect by adjusting rendering
+                Graph.nodeCanvasObject((node, ctx, globalScale) => {
+                    const label = node.name;
+                    const fontSize = 14/globalScale;
+                    // Standard drawing
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, node.val, 0, 2 * Math.PI, false);
+                    ctx.fillStyle = node.color;
+                    ctx.fill();
+                    
+                    // Glow
+                    ctx.shadowColor = node.color;
+                    ctx.shadowBlur = 15;
+                    ctx.fill();
+                    ctx.shadowBlur = 0; // reset
+                    
+                    // Draw node label on top
+                    if (globalScale > 1.5) {
+                        ctx.font = `${fontSize}px Sans-Serif`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillText(label, node.x, node.y + node.val + (10/globalScale));
+                    }
+                });
+            });
+    });
+</script>
+{% endblock %}

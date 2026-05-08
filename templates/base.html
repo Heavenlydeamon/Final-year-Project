@@ -1,0 +1,134 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EcoHeritage | Kerala Learning Platform{% endblock %}</title>
+    <!-- Bootstrap & Tailwind & Google Fonts -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-deep: #050505;
+            --accent-cyan: #00f2ff;
+            --accent-indigo: #6366f1;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-deep);
+            color: #e5e7eb;
+            min-height: 100vh;
+        }
+
+        .glass-nav {
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* PREMIUM BUTTON STYLES */
+        .btn-glow {
+            transition: all 0.3s ease;
+        }
+
+        .btn-glow:hover {
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* CUSTOM SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Navbar -->
+    {% block navbar %}
+    <nav class="glass-nav sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 bg-gradient-to-br from-cyan-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                        <span class="text-white font-black text-xl italic">EH</span>
+                    </div>
+                    <span class="text-xl font-black text-white tracking-tighter uppercase">EcoHeritage <span
+                            class="text-cyan-400">Kerala</span></span>
+                </div>
+
+                <div class="hidden md:flex items-center gap-8">
+                    {% if user.is_authenticated %}
+                    <a href="/"
+                        class="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Home</a>
+                    {% if user.userprofile.role == "teacher" %}
+                    <a href="{% url 'teacher_dashboard' %}"
+                        class="text-xs font-bold uppercase tracking-widest text-cyan-400">Teacher Lab</a>
+                    {% elif user.userprofile.role == "student" %}
+                    <a href="#" class="text-xs font-bold uppercase tracking-widest text-indigo-400">My Learning</a>
+                    <div
+                        class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-1.5 border border-white/10 ml-2 shadow-inner shadow-black/50">
+                        <div class="flex items-center gap-1.5" title="Student Level">
+                            <span class="text-lg filter drop-shadow-[0_0_5px_rgba(100,255,100,0.5)]">⭐</span>
+                            <span class="text-sm font-black text-green-400 font-mono tracking-wider">Lvl {{ user.userprofile.level|default:"1" }}</span>
+                        </div>
+                        <div class="h-4 w-px bg-white/20 mx-1"></div>
+                        <div class="flex items-center gap-1.5" title="Feature Points">
+                            <span class="text-lg filter drop-shadow-[0_0_5px_rgba(0,242,255,0.5)]">✨</span>
+                            <span class="text-sm font-black text-cyan-400 font-mono tracking-wider" id="nav-points">{{ user.userprofile.points|default:"0" }}</span>
+                        </div>
+                        <div class="h-4 w-px bg-white/20 mx-1"></div>
+                        <div class="flex items-center gap-1.5" title="Badges Earned">
+                            <span class="text-lg filter drop-shadow-[0_0_5px_rgba(255,215,0,0.5)]">🏆</span>
+                            <span class="text-sm font-black text-yellow-400 font-mono tracking-wider" id="nav-badges">{{ user.userprofile.collectibles.count|default:"0" }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="h-6 w-px bg-white/10 mx-2"></div>
+                    <div class="text-right">
+                        <p class="text-[11px] font-black text-white uppercase tracking-tighter">{{ user.username }}</p>
+                        <a href="{% url 'logout' %}"
+                            class="text-[10px] font-bold text-red-400/80 uppercase hover:text-red-400 transition-colors">Logout</a>
+                    </div>
+                    {% else %}
+                    <a href="#"
+                        class="text-xs font-black uppercase tracking-widest px-6 py-2 border border-white/10 rounded-xl hover:bg-white/5 transition-all">Sign
+                        In</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+    {% endblock %}
+
+    {% block content %}{% endblock %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

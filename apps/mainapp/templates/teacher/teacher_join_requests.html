@@ -1,0 +1,123 @@
+{% extends 'teacher/teacher_base.html' %}
+
+{% block title %}Join Requests - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}Student Admission Control{% endblock %}
+{% block page_subtitle %}Reviewing incoming requests for class enrollment.{% endblock %}
+
+{% block teacher_extra_css %}
+<style>
+    .request-card-p {
+        border-left: 5px solid var(--accent-gold);
+    }
+    .request-card-p.approved { border-left-color: var(--success-green); }
+    .request-card-p.rejected { border-left-color: #ef4444; }
+</style>
+{% endblock %}
+
+{% block teacher_content %}
+<div class="join-requests-wrapper">
+    {% if messages %}
+    <div class="alert-panel">
+        {% for message in messages %}
+        <div class="alert-box {% if message.tags == 'error' %}rejected{% else %}approved{% endif %}" style="background: white; border: 1px solid var(--card-border);">
+            <i class="fa-solid {% if message.tags == 'error' %}fa-circle-xmark{% else %}fa-circle-check{% endif %}"></i>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if not managed_classes %}
+    <div class="bento-card-p text-center py-5">
+        <div style="font-size: 4rem; margin-bottom: 20px;">🏫</div>
+        <h3 class="fw-bold">No Classes Found</h3>
+        <p class="text-muted">You need to create a class first to receive join requests.</p>
+        <a href="{% url 'teacher_manage_classes' %}" class="btn-p-pill btn-gold-p mt-3">Create Class</a>
+    </div>
+    {% else %}
+    
+    <div class="section-header mb-4">
+        <h3 class="card-label-p m-0">Pending Requests ({{ pending_requests.count }})</h3>
+    </div>
+
+    <div class="bento-grid-p">
+        {% for req in pending_requests %}
+        <div class="bento-col-4 bento-card-p request-card-p">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="fw-bold m-0">{{ req.student.username }}</h4>
+                <span class="badge bg-warning text-dark px-2 py-1 small fw-bold">PENDING</span>
+            </div>
+            <div class="request-details small text-muted mb-4">
+                <div class="mb-1"><i class="fa-solid fa-graduation-cap me-2"></i> <strong>Class:</strong> {{ req.class_obj.name }}</div>
+                <div class="mb-1"><i class="fa-solid fa-building-columns me-2"></i> <strong>School:</strong> {{ req.class_obj.institution.name }}</div>
+                <div class="mb-1"><i class="fa-solid fa-clock me-2"></i> <strong>Requested:</strong> {{ req.request_date|timesince }} ago</div>
+                {% if req.message %}
+                <div class="mt-2 p-2 bg-light rounded" style="font-style: italic;">"{{ req.message }}"</div>
+                {% endif %}
+            </div>
+            <div class="d-flex gap-2 mt-auto">
+                <form method="POST" action="{% url 'teacher_process_join_request' req.id %}" class="flex-grow-1">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="approve">
+                    <button type="submit" class="btn btn-sm btn-success w-100 rounded-pill">Approve</button>
+                </form>
+                <form method="POST" action="{% url 'teacher_process_join_request' req.id %}" class="flex-grow-1">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reject">
+                    <button type="submit" class="btn btn-sm btn-outline-danger w-100 rounded-pill">Reject</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div class="bento-col-12 bento-card-p text-center py-5 text-muted">
+            <i class="fa-solid fa-circle-check fs-1 mb-3 opacity-20"></i>
+            <p>Inbox clean! No pending requests.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if all_requests %}
+    <div class="section-header mt-5 mb-4">
+        <h3 class="card-label-p m-0">Recent Processing History</h3>
+    </div>
+    <div class="bento-card-p p-0 overflow-hidden">
+        <table class="table-v2 m-0">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Target Class</th>
+                    <th>Final Status</th>
+                    <th>Requested</th>
+                    <th>Processed</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in all_requests|slice:":10" %}
+                <tr>
+                    <td class="fw-bold">{{ req.student.username }}</td>
+                    <td>{{ req.class_obj.name }}</td>
+                    <td>
+                        <span class="badge rounded-pill 
+                            {% if req.status == 'approved' %}bg-success{% elif req.status == 'rejected' %}bg-danger{% else %}bg-secondary{% endif %} px-3">
+                            {{ req.status|upper }}
+                        </span>
+                    </td>
+                    <td class="small text-muted">{{ req.request_date|date:"M d, Y" }}</td>
+                    <td class="small text-muted">
+                        {% if req.processed_date %}{{ req.processed_date|date:"M d, Y" }}{% else %}-{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% endif %}
+
+    <div class="mt-5 text-center">
+        <a href="{% url 'teacher_dashboard' %}" class="text-gold-p fw-bold text-decoration-none"><i class="fa-solid fa-arrow-left me-2"></i> Return to Console</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,261 @@
+<style>
+    .drag-drop-container {
+        display: flex;
+        flex-direction: column;
+        gap: 3rem;
+        width: 100%;
+        padding: 2rem;
+    }
+
+    .draggables-row,
+    .containers-row {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .drag-item {
+        background: var(--glass);
+        border: 2px solid var(--glass-border);
+        padding: 1.5rem 2rem;
+        border-radius: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        min-width: 200px;
+        transition: all 0.4s ease;
+    }
+
+    .drag-item img {
+        width: 150px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 1rem;
+    }
+
+    .container-item {
+        border: 3px dashed var(--glass-border);
+        padding: 2rem;
+        border-radius: 2rem;
+        min-width: 250px;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.02);
+        transition: all 0.4s ease;
+    }
+
+    .container-icon {
+        font-size: 48px;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    .container-label {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-dim);
+    }
+
+    .drag-item.correct-match {
+        border-color: var(--accent-green);
+        background: rgba(16, 185, 129, 0.1);
+        transform: scale(0.9);
+        opacity: 0.8;
+    }
+
+    .drag-item.wrong-match {
+        border-color: #ef4444; /* red */
+        background: rgba(239, 68, 68, 0.1);
+        transform: scale(0.9);
+        opacity: 0.8;
+    }
+
+    .container-item.correct-match {
+        border-color: var(--accent-green);
+        border-style: solid;
+        background: rgba(16, 185, 129, 0.1);
+    }
+</style>
+
+<div class="drag-drop-container">
+    <div class="draggables-row">
+        {% for drag in activity.items.draggables %}
+        <div class="drag-item" id="drag-{{ drag.id }}">
+            {% if drag.image %}
+            <img src="{{ drag.image }}" alt="{{ drag.label }}">
+            {% endif %}
+            <span style="font-size: 20px; font-weight: 600;">{{ drag.label }}</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="containers-row">
+        {% for container in activity.items.containers %}
+        <div class="container-item" id="container-{{ container.id }}">
+            <span class="container-icon">{{ container.icon }}</span>
+            <span class="container-label">{{ container.label }}</span>
+            <div class="matched-items" id="matched-{{ container.id }}"
+                style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;"></div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{{ activity.answer|json_script:"answers-data" }}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const draggables = document.querySelectorAll('.drag-item');
+        const containers = document.querySelectorAll('.container-item');
+        const draggablesRow = document.querySelector('.draggables-row');
+
+        draggables.forEach(draggable => {
+            draggable.setAttribute('draggable', 'true');
+            draggable.style.cursor = 'grab';
+            
+            draggable.addEventListener('dragstart', (e) => {
+                draggable.style.opacity = '0.5';
+                e.dataTransfer.setData('text/plain', draggable.id);
+            });
+
+            draggable.addEventListener('dragend', () => {
+                draggable.style.opacity = '1';
+            });
+        });
+
+        containers.forEach(container => {
+            container.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                container.style.background = 'rgba(255, 255, 255, 0.1)';
+            });
+
+            container.addEventListener('dragleave', () => {
+                container.style.background = 'rgba(255, 255, 255, 0.02)';
+            });
+
+            container.addEventListener('drop', (e) => {
+                e.preventDefault();
+                container.style.background = 'rgba(255, 255, 255, 0.02)';
+                const draggedId = e.dataTransfer.getData('text/plain');
+                const draggedEl = document.getElementById(draggedId);
+                
+                if (draggedEl) {
+                    const matchedBox = container.querySelector('.matched-items');
+                    
+                    // Stylize for being in container
+                    draggedEl.style.width = "120px";
+                    draggedEl.style.minWidth = "auto";
+                    draggedEl.style.padding = "0.5rem";
+                    const span = draggedEl.querySelector('span');
+                    if (span) span.style.fontSize = "14px";
+                    const img = draggedEl.querySelector('img');
+                    if (img) {
+                        img.style.width = "80px";
+                        img.style.height = "60px";
+                    }
+                    
+                    matchedBox.appendChild(draggedEl);
+                }
+            });
+        });
+
+        if (draggablesRow) {
+            draggablesRow.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+            draggablesRow.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const draggedId = e.dataTransfer.getData('text/plain');
+                const draggedEl = document.getElementById(draggedId);
+                if (draggedEl) {
+                    // Restore original styling
+                    draggedEl.style.width = "";
+                    draggedEl.style.minWidth = "200px";
+                    draggedEl.style.padding = "1.5rem 2rem";
+                    const span = draggedEl.querySelector('span');
+                    if (span) span.style.fontSize = "20px";
+                    const img = draggedEl.querySelector('img');
+                    if (img) {
+                        img.style.width = "150px";
+                        img.style.height = "120px";
+                    }
+                    draggablesRow.appendChild(draggedEl);
+                }
+            });
+        }
+    });
+
+    function revealDragDrop() {
+        const answersRaw = JSON.parse(document.getElementById('answers-data').textContent);
+        
+        // Normalize answers format
+        let answers = {};
+        if (answersRaw.matches && Array.isArray(answersRaw.matches)) {
+            // Format: {"matches": [{"draggableId": "d1", "containerId": "c1"}]}
+            answersRaw.matches.forEach(match => {
+                if (!answers[match.draggableId]) {
+                    answers[match.draggableId] = [];
+                }
+                answers[match.draggableId].push(match.containerId);
+            });
+        } else {
+            // Format: {"kochunni": "thief"}
+            answers = answersRaw;
+        }
+
+        const allDraggables = document.querySelectorAll('.drag-item');
+        
+        allDraggables.forEach(dragEl => {
+            const dragIdRaw = dragEl.id.replace('drag-', '');
+            
+            // Allow matching arrays if the answer structure differs
+            let correctContainerIds = answers[dragIdRaw];
+            if (!correctContainerIds) return; // skip if not found
+            
+            if (!Array.isArray(correctContainerIds)) {
+                correctContainerIds = [correctContainerIds];
+            }
+            
+            const currentContainer = dragEl.closest('.container-item');
+            
+            // Remove grab cursor since it's revealed
+            dragEl.setAttribute('draggable', 'false');
+            dragEl.style.cursor = 'default';
+
+            if (currentContainer) {
+                const currentContainerId = currentContainer.id.replace('container-', '');
+                if (correctContainerIds.includes(currentContainerId)) {
+                    dragEl.classList.add('correct-match');
+                    currentContainer.classList.add('correct-match');
+                    dragEl.classList.remove('wrong-match');
+                } else {
+                    dragEl.classList.add('wrong-match');
+                    dragEl.classList.remove('correct-match');
+                }
+            } else {
+                // If not placed, move it to the first correct container
+                const targetContainerId = correctContainerIds[0];
+                const containerEl = document.getElementById(`container-${targetContainerId}`);
+                const matchedBox = document.getElementById(`matched-${targetContainerId}`);
+                
+                if (containerEl && matchedBox) {
+                    dragEl.classList.add('correct-match');
+                    containerEl.classList.add('correct-match');
+                    
+                    // Styling for small box
+                    dragEl.style.width = "120px";
+                    dragEl.style.minWidth = "auto";
+                    dragEl.style.padding = "0.5rem";
+                    const span = draggedEl.querySelector('span');
+                    if (span) span.style.fontSize = "14px";
+                    const img = draggedEl.querySelector('img');
+                    if (img) {
+                        img.style.width = "80px";
+                        img.style.height = "60px";
+                    }
+                    matchedBox.appendChild(dragEl);
+                }
+            }
+        });
+    }
+</script>

@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Narrative Journeys | EcoHeritage{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --bg-sepia: #f4ece1;
+        --text-ink: #2c241a;
+        --accent-burgundy: #6b2d2d;
+        --accent-gold: #b38b4d;
+    }
+
+    body {
+        background-color: var(--bg-sepia);
+        color: var(--text-ink);
+        font-family: 'Crimson Pro', serif;
+    }
+
+    .stories-container {
+        max-width: 1000px;
+        margin: 100px auto;
+        padding: 0 20px;
+    }
+
+    .stories-header {
+        text-align: center;
+        margin-bottom: 60px;
+    }
+
+    .stories-header h1 {
+        font-family: 'Tenor Sans', serif;
+        font-size: 3rem;
+        color: var(--accent-burgundy);
+        margin-bottom: 15px;
+    }
+
+    .story-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 30px;
+    }
+
+    .story-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        transition: 0.3s;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .story-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+    }
+
+    .story-img {
+        height: 200px;
+        background: #ddd;
+        background-size: cover;
+        background-position: center;
+    }
+
+    .story-body {
+        padding: 25px;
+        flex: 1;
+    }
+
+    .story-body h3 {
+        font-family: 'Tenor Sans', serif;
+        margin-bottom: 10px;
+        color: var(--accent-burgundy);
+    }
+
+    .story-body p {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        color: #555;
+        margin-bottom: 20px;
+    }
+
+    .story-footer {
+        padding: 15px 25px;
+        border-top: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+    }
+
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-progress { background: #fff3cd; color: #856404; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stories-container">
+    <div class="stories-header">
+        <h1>Narrative Journeys</h1>
+        <p>Step into the past and experience the living legends of our heritage.</p>
+    </div>
+
+    <div class="story-grid">
+        {% for story in stories %}
+        <a href="{% url 'story_detail' story.id %}" class="story-card">
+            <div class="story-img" style="background-image: url('{% if story.image %}{{ story.image.url }}{% else %}{% static 'images/story_default.jpg' %}{% endif %}')"></div>
+            <div class="story-body">
+                <h3>{{ story.title }}</h3>
+                <p>{{ story.description|truncatechars:120 }}</p>
+            </div>
+            <div class="story-footer">
+                <span>{{ story.get_category_display }}</span>
+                {% with progress=user_progress|dictkey:story.id %}
+                    {% if progress.completed %}
+                        <span class="status-badge status-completed">Completed</span>
+                    {% elif progress %}
+                        <span class="status-badge status-progress">In Progress</span>
+                    {% else %}
+                        <span style="color: var(--accent-gold);">Start Journey &rarr;</span>
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </a>
+        {% empty %}
+        <div style="text-align: center; grid-column: 1/-1; padding: 40px;">
+            <p>No stories are currently available. Check back soon!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,321 @@
+/* Learning Modes: Story & Comic CSS */
+
+:root {
+    --story-accent: #6366f1;
+}
+
+/* STORY MODE STYLES */
+.story-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.scene-card {
+    display: none;
+    background: rgba(15, 23, 42, 0.6); /* Deeper contrast for text */
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin-bottom: 25px;
+    opacity: 1 !important;
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scene-card.active {
+    display: block;
+}
+
+.scene-image {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+.scene-text {
+    font-size: 1.6rem; /* Increased for kids/projector */
+    line-height: 1.8;
+    color: #ffffff !important; /* Force readable white */
+    margin-bottom: 2rem;
+    font-family: 'Noto Sans Malayalam', 'Outfit', sans-serif;
+    font-weight: 400;
+}
+
+.story-nav {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 3rem;
+    position: relative;
+    z-index: 10;
+}
+
+.nav-btn {
+    padding: 12px 32px; /* Bigger touch targets */
+    border-radius: 50px; /* Modern pill shape */
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-prev {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.btn-next {
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    color: #fff;
+}
+
+.btn-next:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+}
+
+/* WHITEBOARD STYLES */
+.whiteboard-container {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.whiteboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+#whiteboardCanvas {
+    background: #fff;
+    border-radius: 12px;
+    cursor: crosshair;
+    touch-action: none;
+    width: 100%;
+    height: 300px;
+}
+
+.canvas-tools {
+    display: flex;
+    gap: 1rem;
+}
+
+
+/* DIRECTOR'S TOGGLE */
+.director-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 3rem;
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+}
+
+.toggle-btn {
+    padding: 0.8rem 2rem;
+    border: 3px solid #000;
+    background: #fff;
+    color: #000;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 6px 6px 0px #000;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.toggle-btn.active {
+    background: #000;
+    color: #fff;
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000;
+}
+
+.toggle-btn:hover:not(.active) {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0px #ef4444;
+}
+
+/* MODE SWITCHING */
+.mode-story-only { display: none; }
+body.story-active .mode-story-only { display: block; }
+
+/* ANIMATIONS */
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.1); box-shadow: 0 0 20px #facc15; }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+/* TEACHER CONTROL BAR: Fixed at Top */
+.teacher-control-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(17, 24, 39, 0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 2px solid #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+    color: white;
+}
+
+.teacher-control-bar h4 {
+    margin: 0;
+    font-family: 'Bangers', cursive;
+    letter-spacing: 1px;
+}
+
+.score-badge {
+    background: #facc15;
+    color: #000;
+    padding: 0.2rem 1rem;
+    border-radius: 50px;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    border: 2px solid #000;
+}
+
+/* BIG TEXT MODE */
+body.big-text-active .scene-text {
+    font-size: 2.2rem !important;
+    line-height: 1.6;
+}
+
+body.big-text-active .speech-bubble {
+    font-size: 1.8rem !important;
+}
+
+body.big-text-active .character-name-tag {
+    font-size: 1.5rem !important;
+}
+
+/* TEACHER PROMPT BOX */
+.teacher-prompt-box {
+    background: #fef9c3;
+    border: 2px dashed #ca8a04;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    border-radius: 12px;
+    color: #854d0e;
+    font-size: 1.1rem;
+    position: relative;
+}
+
+.teacher-prompt-box::before {
+    content: "🧑🏫 ASK STUDENTS:";
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background: #ca8a04;
+    color: #fff;
+    padding: 0.1rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 900;
+    border-radius: 4px;
+}
+
+/* COMPLETION UI */
+.completion-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 2000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #fff;
+    animation: fadeIn 0.5s ease;
+}
+
+.completion-card {
+    background: #111827;
+    border: 6px solid #facc15;
+    padding: 4rem;
+    border-radius: 32px;
+    box-shadow: 0 0 50px rgba(250, 204, 21, 0.3);
+    max-width: 600px;
+    width: 90%;
+    position: relative;
+    overflow: hidden;
+}
+
+.completion-card::after {
+    content: "🎉";
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    font-size: 10rem;
+    opacity: 0.1;
+    pointer-events: none;
+}
+
+.badge-display {
+    font-size: 5rem;
+    margin: 2rem 0;
+    filter: drop-shadow(0 0 10px #facc15);
+}
+
+/* PROJECTOR OPTIMIZATION */
+.btn-projector {
+    font-size: 1.25rem !important;
+    padding: 1rem 2rem !important;
+    border-width: 4px !important;
+}
+
+.high-contrast {
+    color: #fff !important;
+    text-shadow: 2px 2px 0px #000 !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* UTILITIES */
+.d-none { display: none !important; }
+
+/* RESPONSIVE UPDATES */
+@media (max-width: 900px) {
+    .teacher-control-bar {
+        padding: 0 1rem;
+        font-size: 0.8rem;
+    }
+    .teacher-control-bar h4 { display: none; }
+}

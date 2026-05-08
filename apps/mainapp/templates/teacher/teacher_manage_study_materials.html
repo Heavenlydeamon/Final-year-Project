@@ -1,0 +1,156 @@
+{% extends 'teacher/teacher_base.html' %}
+
+{% block title %}Content Management - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}Resource Library{% endblock %}
+{% block page_subtitle %}Curate and deploy rich media study materials for student exploration.{% endblock %}
+
+{% block teacher_extra_css %}
+<style>
+    .material-form-p {
+        background: white;
+        border-radius: 24px;
+        padding: 35px;
+        border: 1px solid var(--card-border);
+        box-shadow: var(--shadow-sm);
+    }
+    .media-pill-p {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        border: 1px solid transparent;
+    }
+    .media-img { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+    .media-aud { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+    .media-vid { background: #fce7f3; color: #be185d; border-color: #fbcfe8; }
+    
+    .material-item-card-p {
+        border-left: 4px solid var(--accent-gold);
+        transition: 0.3s;
+    }
+    .material-item-card-p:hover { transform: translateX(5px); }
+
+    .file-input-p {
+        border: 2px dashed #e2e8f0;
+        padding: 15px;
+        border-radius: 15px;
+        text-align: center;
+        background: #f8fafc;
+        transition: 0.3s;
+    }
+    .file-input-p:hover { border-color: var(--accent-gold); background: #f1f5f9; }
+</style>
+{% endblock %}
+
+{% block teacher_content %}
+<div class="manage-materials-wrapper">
+    
+    {% if messages %}
+    <div class="alert-panel">
+        {% for message in messages %}
+        <div class="alert-box approved" style="background: white; border: 1px solid var(--card-border);">
+            <i class="fa-solid fa-circle-check text-success"></i>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="bento-grid-p">
+        <!-- Add Material Form -->
+        <div class="bento-col-5">
+            <div class="material-form-p">
+                <h4 class="card-label-p">Add Study Shard</h4>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Target Topic</label>
+                        <select name="topic" class="form-select rounded-pill px-3" required>
+                            <option value="">-- Select Topic --</option>
+                            {% for topic in all_topics %}
+                            <option value="{{ topic.id }}" {% if selected_topic.id == topic.id %}selected{% endif %}>
+                                {{ topic.name }} ({{ topic.section.name }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Material Title</label>
+                        <input type="text" name="title" class="form-control rounded-pill px-3" required placeholder="e.g. Flora Overview">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Educational Content</label>
+                        <textarea name="content_text" class="form-control rounded-4" rows="6" required placeholder="Detailed study content..."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="small fw-bold text-muted text-uppercase mb-3">Media Attachments</h6>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="small text-muted mb-1">Image Asset</label>
+                                <input type="file" name="image" class="form-control form-control-sm rounded-pill" accept="image/*">
+                            </div>
+                            <div class="col-6">
+                                <label class="small text-muted mb-1">Audio Guide</label>
+                                <input type="file" name="audio" class="form-control form-control-sm rounded-pill" accept="audio/*">
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="small text-muted mb-1">Video Source (URL)</label>
+                            <input type="url" name="video_url" class="form-control form-control-sm rounded-pill" placeholder="https://youtube.com/...">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-p-pill btn-gold-p w-100 py-3 mt-2">Deploy Material</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Materials List -->
+        <div class="bento-col-7">
+            {% if selected_topic %}
+            <h4 class="card-label-p">Shards in {{ selected_topic.name }}</h4>
+            <div class="bento-grid-p">
+                {% for material in study_materials %}
+                <div class="bento-col-12 bento-card-p material-item-card-p">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h6 class="fw-bold m-0">{{ material.title }}</h6>
+                        <span class="text-muted small fw-bold">#{{ material.order }}</span>
+                    </div>
+                    <p class="text-muted small mb-3">{{ material.content_text|truncatewords:40 }}</p>
+                    
+                    <div class="d-flex gap-2 mb-3">
+                        {% if material.image_url %}<span class="media-pill-p media-img"><i class="fa-solid fa-image"></i> Image</span>{% endif %}
+                        {% if material.audio_url %}<span class="media-pill-p media-aud"><i class="fa-solid fa-microphone"></i> Audio</span>{% endif %}
+                        {% if material.video_url %}<span class="media-pill-p media-vid"><i class="fa-solid fa-video"></i> Video</span>{% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-auto pt-3 border-top">
+                        <button class="btn btn-sm btn-outline-dark rounded-pill px-3">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger rounded-pill"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="bento-col-12 bento-card-p text-center py-5">
+                    <p class="text-muted italic">No study materials for this topic yet.</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="bento-card-p h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                <div style="font-size: 4rem; opacity: 0.1;" class="mb-3"><i class="fa-solid fa-book-bookmark"></i></div>
+                <h5 class="fw-bold">Repository View</h5>
+                <p class="text-muted small px-5">Select a topic from the library form to view and manage its active study shards.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

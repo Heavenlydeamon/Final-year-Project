@@ -1,0 +1,243 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Activity Quiz | {{ topic.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .activity-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        background: rgba(25, 30, 40, 0.8);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 2rem;
+    }
+
+    .match-columns {
+        display: flex;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .match-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .draggable-item {
+        background: linear-gradient(135deg, rgba(80, 100, 150, 0.2), rgba(40, 60, 100, 0.4));
+        border: 2px solid var(--accent-gold);
+        border-radius: 12px;
+        padding: 1rem;
+        cursor: grab;
+        color: white;
+        text-align: center;
+        font-weight: bold;
+        transition: transform 0.2s;
+        min-height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .draggable-item:active {
+        cursor: grabbing;
+        transform: scale(0.95);
+    }
+
+    .droppable-target {
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        padding: 1rem;
+        color: #ccc;
+        text-align: center;
+        min-height: 100px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+    }
+
+    .droppable-target.drag-over {
+        border-color: var(--accent-gold);
+        background: rgba(212, 175, 55, 0.1);
+    }
+
+    .droppable-target.matched {
+        border: 2px solid #28a745;
+        background: rgba(40, 167, 69, 0.1);
+        color: white;
+    }
+    
+    .dropped-content {
+        margin-top: 10px;
+        background: var(--accent-gold);
+        color: black;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        animation: popIn 0.3s ease;
+    }
+
+    @keyframes popIn {
+        0% { transform: scale(0.5); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    .completion-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 1000;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="activity-container">
+        <div class="text-center mb-4">
+            <h2 class="gradient-text"><i class="fas fa-puzzle-piece me-2"></i> {{ quiz.title }}</h2>
+            <p class="text-muted">{{ quiz.description|default:"Drag the items on the left to their matching targets on the right!" }}</p>
+        </div>
+
+        <div class="match-columns">
+            <div class="match-col" id="draggables-col">
+                <h4 class="text-center text-white mb-3">Items</h4>
+                {% for item in left_items %}
+                <div class="draggable-item" draggable="true" id="drag-{{ item.id }}" data-id="{{ item.id }}">
+                    {{ item.text }}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="match-col" id="targets-col">
+                <h4 class="text-center text-white mb-3">Matches</h4>
+                {% for item in right_items %}
+                <div class="droppable-target" id="target-{{ item.id }}" data-id="{{ item.id }}">
+                    <div class="target-title">{{ item.text }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="text-center mt-5">
+            <button id="btn-submit" class="btn-p-pill btn-gold-p" disabled onclick="submitQuiz()">Submit Answers</button>
+        </div>
+    </div>
+</div>
+
+<!-- Form to submit results to backend -->
+<form id="quiz-form" method="POST" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="score" id="input-score" value="0">
+    <input type="hidden" name="total" value="{{ left_items|length }}">
+</form>
+
+<div class="completion-overlay" id="completionOverlay">
+    <i class="fas fa-star" style="font-size: 5rem; color: var(--accent-gold); margin-bottom: 2rem;"></i>
+    <h1 class="display-3 fw-bold mb-3">Great Job!</h1>
+    <p class="lead">You matched all the items correctly.</p>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const draggables = document.querySelectorAll('.draggable-item');
+        const targets = document.querySelectorAll('.droppable-target');
+        let matchesMade = 0;
+        
+        // Fetch total from a safe HTML attribute instead of raw template injection
+        const totalMatchesInput = document.querySelector('input[name="total"]');
+        const totalMatches = totalMatchesInput ? parseInt(totalMatchesInput.value, 10) : 0;
+        
+        draggables.forEach(draggable => {
+            draggable.addEventListener('dragstart', () => {
+                draggable.classList.add('dragging');
+                // Store the id of the dragged item
+                window.draggedItemId = draggable.dataset.id;
+                window.draggedElement = draggable;
+            });
+            
+            draggable.addEventListener('dragend', () => {
+                draggable.classList.remove('dragging');
+            });
+        });
+
+        targets.forEach(target => {
+            target.addEventListener('dragover', e => {
+                e.preventDefault();
+                target.classList.add('drag-over');
+            });
+
+            target.addEventListener('dragleave', () => {
+                target.classList.remove('drag-over');
+            });
+
+            target.addEventListener('drop', e => {
+                e.preventDefault();
+                target.classList.remove('drag-over');
+                
+                const targetId = target.dataset.id;
+                
+                // If this is a correct match
+                if (window.draggedItemId === targetId && !target.classList.contains('matched')) {
+                    // Visual feedback
+                    target.classList.add('matched');
+                    const droppedContent = document.createElement('div');
+                    droppedContent.className = 'dropped-content';
+                    // We use innerText to safely grab the text
+                    droppedContent.innerText = window.draggedElement.innerText;
+                    target.appendChild(droppedContent);
+                    
+                    // Remove the draggable
+                    window.draggedElement.style.display = 'none';
+                    
+                    matchesMade++;
+                    checkCompletion();
+                } else if (window.draggedItemId !== targetId) {
+                    // Shake animation for wrong answer
+                    target.style.transform = 'translateX(10px)';
+                    setTimeout(() => target.style.transform = 'translateX(-10px)', 100);
+                    setTimeout(() => target.style.transform = 'translateX(10px)', 200);
+                    setTimeout(() => target.style.transform = 'translateX(0)', 300);
+                }
+            });
+        });
+
+        function checkCompletion() {
+            if (matchesMade === totalMatches) {
+                document.getElementById('btn-submit').removeAttribute('disabled');
+                document.getElementById('input-score').value = matchesMade;
+                
+                // Show completion overlay briefly
+                const overlay = document.getElementById('completionOverlay');
+                overlay.style.display = 'flex';
+                
+                setTimeout(() => {
+                    submitQuiz();
+                }, 1500);
+            }
+        }
+    });
+
+    function submitQuiz() {
+        document.getElementById('quiz-form').submit();
+    }
+</script>
+{% endblock %}

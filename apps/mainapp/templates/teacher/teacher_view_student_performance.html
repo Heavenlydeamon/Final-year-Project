@@ -1,0 +1,140 @@
+{% extends 'teacher/teacher_base.html' %}
+
+{% block title %}Student Performance - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}Analytics: {{ student.username }}{% endblock %}
+{% block page_subtitle %}In-depth performance breakdown and academic milestones.{% endblock %}
+
+{% block teacher_extra_css %}
+<style>
+    .profile-banner-p {
+        background: var(--sidebar-bg);
+        color: white;
+        border-radius: 24px;
+        padding: 35px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    .profile-banner-p::after {
+        content: '\f19d';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        right: -20px;
+        bottom: -20px;
+        font-size: 10rem;
+        opacity: 0.05;
+    }
+    .stat-circle-p {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    .stat-circle-p .val { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+    .stat-circle-p .lbl { font-size: 0.6rem; text-transform: uppercase; opacity: 0.7; }
+
+    .performance-grid-p {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+    }
+    @media (max-width: 992px) { .performance-grid-p { grid-template-columns: 1fr; } }
+
+    .data-row-p {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        border-bottom: 1px solid var(--card-border);
+        transition: 0.3s;
+    }
+    .data-row-p:hover { background: #f8fafc; }
+    .data-row-p:last-child { border-bottom: none; }
+</style>
+{% endblock %}
+
+{% block teacher_content %}
+<div class="student-performance-wrapper">
+    
+    <!-- Profile Banner -->
+    <div class="profile-banner-p">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="fw-bold m-0">{{ student.username }}</h2>
+                <p class="text-white-50 small mb-0">{{ student.email|default:"No email registered" }} • Enrolled {{ student.date_joined|date:"M Y" }}</p>
+            </div>
+            <div class="d-flex gap-4">
+                <div class="stat-circle-p">
+                    <span class="val">{{ total_quizzes }}</span>
+                    <span class="lbl">Quizzes</span>
+                </div>
+                <div class="stat-circle-p">
+                    <span class="val">{{ avg_score|floatformat:0 }}%</span>
+                    <span class="lbl">Avg Score</span>
+                </div>
+            </div>
+        </div>
+        <div class="mt-4">
+            <span class="badge bg-gold-p text-dark rounded-pill px-3 py-2">Automated Valuation Active</span>
+        </div>
+    </div>
+
+    <!-- Performance Content -->
+    <div class="performance-grid-p">
+        <!-- Quiz History -->
+        <div class="bento-card-p">
+            <h4 class="card-label-p"><i class="fa-solid fa-vial-circle-check me-2 text-gold-p"></i> Assessment History</h4>
+            <div class="data-scroll-p" style="max-height: 500px; overflow-y: auto;">
+                {% if quiz_attempts %}
+                    {% for attempt in quiz_attempts %}
+                    <div class="data-row-p">
+                        <div>
+                            <div class="fw-bold small">{{ attempt.section.name }}</div>
+                            <div class="extra-small text-muted">{{ attempt.date_attempted|date:"M d, Y" }}</div>
+                        </div>
+                        <div class="badge {% if attempt.score|add:attempt.score >= attempt.total_questions %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} border px-3 rounded-pill">
+                            {{ attempt.score }} / {{ attempt.total_questions }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5 text-muted small">No assessment attempts recorded yet.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Completion Milestones -->
+        <div class="bento-card-p">
+            <h4 class="card-label-p"><i class="fa-solid fa-flag-checkered me-2 text-gold-p"></i> Completion Status</h4>
+            <div class="data-scroll-p" style="max-height: 500px; overflow-y: auto;">
+                {% if topic_progress %}
+                    {% for prog in topic_progress %}
+                    <div class="data-row-p">
+                        <div>
+                            <div class="fw-bold small">{{ prog.topic.name }}</div>
+                            <div class="extra-small text-muted">{{ prog.completed_at|date:"M d, Y"|default:"In Progress" }}</div>
+                        </div>
+                        <div class="mastery-status-p {% if prog.status == 'completed' %}status-completed-p{% else %}status-progress-p{% endif %}">
+                            {{ prog.get_status_display }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5 text-muted small">No topics started yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-5 text-center">
+        <a href="{% url 'teacher_dashboard' %}" class="text-gold-p fw-bold text-decoration-none"><i class="fa-solid fa-arrow-left me-2"></i> Return to Console</a>
+    </div>
+</div>
+{% endblock %}

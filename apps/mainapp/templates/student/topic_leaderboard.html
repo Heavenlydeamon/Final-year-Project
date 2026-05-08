@@ -1,0 +1,179 @@
+{% extends 'student/student_base.html' %}
+{% load static %}
+
+{% block title %}Topic Leaderboard: {{ topic.name }} - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}{{ topic.name }} Leaderboard{% endblock %}
+{% block page_subtitle %}Ranking the top scholars mastering this heritage topic.{% endblock %}
+
+{% block student_extra_css %}
+<style>
+    .leaderboard-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding-bottom: 5rem;
+    }
+    .leaderboard-hero {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border-radius: 2rem;
+        padding: 3rem;
+        color: white;
+        text-align: center;
+        margin-bottom: 3rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+    .podium {
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+    .podium-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 120px;
+    }
+    .podium-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        border: 4px solid #fff;
+        margin-bottom: 1rem;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        background: #f1f5f9;
+    }
+    .podium-1 .podium-avatar { width: 100px; height: 100px; border-color: #fbbf24; }
+    .podium-2 .podium-avatar { border-color: #94a3b8; }
+    .podium-3 .podium-avatar { border-color: #d97706; }
+    
+    .podium-rank {
+        font-weight: 900;
+        font-size: 1.5rem;
+        color: white;
+        margin-bottom: 0.5rem;
+    }
+    .podium-name {
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: white;
+        margin-bottom: 0.2rem;
+    }
+    .podium-score {
+        font-weight: 800;
+        color: #fbbf24;
+    }
+
+    .leaderboard-list {
+        background: white;
+        border-radius: 2rem;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+    }
+    .leaderboard-item {
+        display: flex;
+        align-items: center;
+        padding: 1.25rem 2rem;
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.3s;
+    }
+    .leaderboard-item:last-child { border-bottom: none; }
+    .leaderboard-item:hover { background: #f8fafc; }
+    .leaderboard-item.me { background: #fffbeb; }
+    
+    .item-rank {
+        width: 40px;
+        font-weight: 800;
+        color: #64748b;
+        font-size: 1.1rem;
+    }
+    .item-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        margin-right: 1.5rem;
+    }
+    .item-info { flex-grow: 1; }
+    .item-name { font-weight: 700; color: #1e293b; }
+    .item-class { font-size: 0.75rem; color: #94a3b8; }
+    .item-score {
+        text-align: right;
+        font-weight: 800;
+        color: #0f172a;
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}
+
+{% block student_content %}
+<div class="leaderboard-container">
+    <div class="leaderboard-hero">
+        <div class="badge bg-warning text-dark mb-2 px-3 py-2 rounded-pill">TOP SCHOLARS</div>
+        <h1 style="font-family: 'Tenor Sans'; color: #fbbf24;">{{ topic.name }}</h1>
+        <p class="opacity-75">Valuation based on Progress, AI Quizzes, and Daily Challenges</p>
+        
+        <div class="podium">
+            {% for entry in leaderboard|slice:":3" %}
+            {% if forloop.counter == 2 %}
+            <div class="podium-item podium-2">
+                <div class="podium-rank">2</div>
+                <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed={{ entry.user.username }}" class="podium-avatar">
+                <div class="podium-name">{{ entry.user.username }}</div>
+                <div class="podium-score">{{ entry.composite_marks|floatformat:0 }}</div>
+            </div>
+            {% endif %}
+            {% endfor %}
+            
+            {% for entry in leaderboard|slice:":1" %}
+            <div class="podium-item podium-1">
+                <div class="podium-rank">1</div>
+                <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed={{ entry.user.username }}" class="podium-avatar">
+                <div class="podium-name">{{ entry.user.username }}</div>
+                <div class="podium-score">{{ entry.composite_marks|floatformat:0 }}</div>
+            </div>
+            {% endfor %}
+
+            {% for entry in leaderboard|slice:"2:3" %}
+            <div class="podium-item podium-3">
+                <div class="podium-rank">3</div>
+                <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed={{ entry.user.username }}" class="podium-avatar">
+                <div class="podium-name">{{ entry.user.username }}</div>
+                <div class="podium-score">{{ entry.composite_marks|floatformat:0 }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="leaderboard-list">
+        {% for entry in leaderboard %}
+        <div class="leaderboard-item {% if entry.user == request.user %}me{% endif %}">
+            <div class="item-rank">#{{ forloop.counter }}</div>
+            <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed={{ entry.user.username }}" class="item-avatar">
+            <div class="item-info">
+                <div class="item-name">{{ entry.user.get_full_name|default:entry.user.username }}</div>
+                <div class="item-class">{{ entry.user.userprofile.student_class.first.name|default:"Heritage Scholar" }}</div>
+            </div>
+            <div class="item-score">
+                {{ entry.composite_marks|floatformat:1 }}
+                <div style="font-size: 0.65rem; color: #94a3b8;">TOTAL MARKS</div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="p-5 text-center text-muted">
+            <i class="fa-solid fa-users-slash fs-1 mb-3 opacity-25"></i>
+            <p class="mb-1">No scholars are visible on the leaderboard yet.</p>
+            <p class="small">If you've completed the topic, your results may be pending teacher review and publication.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-5 text-center">
+        <a href="{% url 'student_dashboard' %}" class="btn btn-outline-dark px-4 py-2 rounded-pill">
+            <i class="fa-solid fa-arrow-left me-2"></i> Back to Console
+        </a>
+    </div>
+</div>
+{% endblock %}

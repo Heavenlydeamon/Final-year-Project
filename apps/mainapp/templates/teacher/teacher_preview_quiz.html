@@ -1,0 +1,201 @@
+{% extends 'teacher/teacher_base.html' %}
+{% load static %}
+
+{% block title %}Assessment Preview - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}Content Validation{% endblock %}
+{% block page_subtitle %}Final review and optimization of assessment artifacts before deployment.{% endblock %}
+
+{% block teacher_extra_css %}
+<style>
+    .preview-sidebar-p {
+        background: white;
+        border-radius: 24px;
+        padding: 30px;
+        border: 1px solid var(--card-border);
+        box-shadow: var(--shadow-sm);
+        position: sticky;
+        top: 20px;
+    }
+    .question-preview-card-p {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 25px;
+        border: 1px solid var(--card-border);
+        transition: 0.3s;
+    }
+    .question-preview-card-p:hover {
+        border-color: var(--accent-gold);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    .option-view-p {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 15px;
+        background: #f8fafc;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        border: 1px solid transparent;
+    }
+    .option-view-p.correct {
+        background: var(--accent-gold-light);
+        border-color: var(--accent-gold);
+        color: var(--accent-gold);
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block teacher_content %}
+<div class="preview-quiz-wrapper">
+    
+    <div class="filter-bar-p mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb m-0 small fw-bold">
+                <li class="breadcrumb-item"><a href="{% url 'teacher_my_quizzes' %}" class="text-muted">Repository</a></li>
+                <li class="breadcrumb-item active text-gold-p">Assessment Preview</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="bento-grid-p">
+        <!-- Sidebar Metadata -->
+        <div class="bento-col-4">
+            <div class="preview-sidebar-p">
+                <h5 class="fw-bold mb-4">Assessment Profile</h5>
+                <div class="mb-4">
+                    <h3 class="fw-bold text-dark m-0">{{ quiz.title }}</h3>
+                    <p class="text-muted small mt-2">{{ quiz.description|default:"No description provided." }}</p>
+                </div>
+
+                <div class="meta-list-p mb-5">
+                    <div class="d-flex justify-content-between small py-2 border-bottom">
+                        <span class="text-muted">Stream:</span>
+                        <span class="fw-bold">{{ quiz.section.name }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between small py-2 border-bottom">
+                        <span class="text-muted">Status:</span>
+                        <span class="badge bg-gold-light text-gold-p rounded-pill px-3">{{ quiz.status|upper }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between small py-2 border-bottom">
+                        <span class="text-muted">Questions:</span>
+                        <span class="fw-bold">{{ quiz.questions.count }} Trials</span>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column gap-2">
+                    {% if quiz.status == 'draft' %}
+                    <button class="btn-p-pill btn-gold-p py-2" id="submitApprovalBtn">Submit for Approval</button>
+                    <button class="btn btn-outline-dark rounded-pill py-2" id="saveDraftBtn">Sync Draft</button>
+                    {% endif %}
+                    
+                    {% if quiz.status == 'approved' %}
+                    <button class="btn btn-success rounded-pill py-2 fw-bold" id="convertBtn">Deploy to Question Bank</button>
+                    {% endif %}
+                </div>
+
+                {% if quiz.rejection_reason %}
+                <div class="mt-4 p-3 bg-danger-subtle text-danger rounded-4 small">
+                    <h6 class="fw-bold extra-small text-uppercase mb-1">Rejection Feedback:</h6>
+                    {{ quiz.rejection_reason }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Questions Content -->
+        <div class="bento-col-8">
+            <div class="section-header mb-4">
+                <h4 class="card-label-p">Validated Artifacts</h4>
+            </div>
+
+            {% for question in quiz.questions.all %}
+            <div class="question-preview-card-p">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="extra-small fw-bold text-muted text-uppercase">Question {{ forloop.counter }}</span>
+                    <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3 question-difficulty" style="width: auto;" data-question-id="{{ question.id }}">
+                        <option value="easy" {% if question.difficulty == 'easy' %}selected{% endif %}>Beginner</option>
+                        <option value="medium" {% if question.difficulty == 'medium' %}selected{% endif %}>Standard</option>
+                        <option value="hard" {% if question.difficulty == 'hard' %}selected{% endif %}>Master</option>
+                    </select>
+                </div>
+
+                <textarea class="form-control fw-bold border-0 bg-transparent p-0 mb-4 question-text" rows="2" data-question-id="{{ question.id }}" style="font-size: 1.1rem;">{{ question.question_text }}</textarea>
+
+                <div class="options-view-container-p">
+                    {% for choice in question.choices.all %}
+                    <div class="option-view-p {% if choice.is_correct %}correct{% endif %}">
+                        {% if choice.is_correct %}<i class="fa-solid fa-circle-check"></i>{% else %}<i class="fa-regular fa-circle"></i>{% endif %}
+                        <input type="text" class="form-control border-0 bg-transparent p-0 extra-small choice-text" value="{{ choice.choice_text }}" data-choice-id="{{ choice.id }}">
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="mt-4 pt-3 border-top d-flex justify-content-end">
+                    <button class="btn btn-sm btn-outline-warning rounded-pill px-3 promote-challenge-btn" data-question-id="{{ question.id }}">
+                        <i class="fa-solid fa-trophy me-2"></i> Promote to Daily Challenge
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block teacher_extra_js %}
+<script>
+$(document).ready(function() {
+    function saveQuiz(action) {
+        $.ajax({
+            url: '{% url "teacher_save_quiz" quiz.id %}',
+            method: 'POST',
+            data: { action: action, csrfmiddlewaretoken: '{{ csrf_token }}' },
+            success: function() {
+                alert('Action complete!');
+                location.reload();
+            }
+        });
+    }
+
+    $('#saveDraftBtn').click(function() { saveQuiz('draft'); });
+    $('#submitApprovalBtn').click(function() { saveQuiz('submit'); });
+
+    $('#convertBtn').click(function() {
+        if (confirm('Deploy this quiz to permanent curriculum questions?')) {
+            $.ajax({
+                url: '{% url "convert_quiz_to_questions" quiz.id %}',
+                method: 'POST',
+                data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+                success: function(r) { alert(r.message); location.href='{% url "teacher_my_quizzes" %}'; }
+            });
+        }
+    });
+
+    $('.question-text, .question-difficulty').change(function() {
+        const id = $(this).data('question-id');
+        const text = $(this).hasClass('question-text') ? $(this).val() : null;
+        const diff = $(this).hasClass('question-difficulty') ? $(this).val() : null;
+        const data = { csrfmiddlewaretoken: '{{ csrf_token }}' };
+        if (text) data.question_text = text;
+        if (diff) data.difficulty = diff;
+        $.post('{% url "teacher_update_question" 0 %}'.replace('0', id), data);
+    });
+
+    $('.promote-challenge-btn').click(function() {
+        const id = $(this).data('question-id');
+        const btn = $(this);
+        if (confirm('Promote to Daily Challenge?')) {
+            $.post('{% url "promote_to_daily_challenge" 0 %}'.replace('0', id), { csrfmiddlewaretoken: '{{ csrf_token }}' }, function(r) {
+                alert(r.message);
+                btn.addClass('btn-warning').removeClass('btn-outline-warning').html('<i class="fa-solid fa-check"></i> Active');
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

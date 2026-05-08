@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Results | {{ topic.name|default:topic.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --bg-bone: #f4f1ea;
+        --bg-academic: #ebe7df;
+        --text-dark: #0e0e0e;
+        --accent-gold: #b38b4d;
+        --accent-green: #2d6a4f;
+    }
+
+    body {
+        background-color: var(--bg-bone);
+        color: var(--text-dark);
+        font-family: 'Inter', sans-serif;
+    }
+
+    .results-container {
+        max-width: 800px;
+        margin: 160px auto 100px;
+        text-align: center;
+        padding: 0 20px;
+    }
+
+    .results-card {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.05);
+        border-radius: 24px;
+        padding: 80px 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.02);
+    }
+
+    .circle-wrap {
+        width: 150px;
+        height: 150px;
+        background: var(--bg-academic);
+        border-radius: 50%;
+        margin: 0 auto 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    .score-percentage {
+        font-family: 'Tenor Sans', serif;
+        font-size: 3rem;
+        color: var(--text-dark);
+        z-index: 2;
+    }
+
+    .results-card h2 {
+        font-family: 'Tenor Sans', serif;
+        font-size: 2rem;
+        margin-bottom: 15px;
+    }
+
+    .feedback-text {
+        color: #666;
+        font-size: 1.1rem;
+        max-width: 500px;
+        margin: 0 auto 50px;
+        line-height: 1.6;
+    }
+
+    .stats-row {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        margin-bottom: 60px;
+        padding-top: 40px;
+        border-top: 1px solid #eee;
+    }
+
+    .stat-item span {
+        display: block;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--accent-gold);
+        margin-bottom: 5px;
+    }
+
+    .stat-item strong {
+        font-family: 'Tenor Sans', serif;
+        font-size: 1.5rem;
+    }
+
+    .btn-return {
+        background: var(--text-dark);
+        color: #fff;
+        text-decoration: none;
+        padding: 18px 45px;
+        border-radius: 8px;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        transition: 0.3s;
+        display: inline-block;
+    }
+
+    .btn-return:hover {
+        background: var(--accent-gold);
+        transform: translateY(-3px);
+    }
+
+    /* --- Animation --- */
+    .results-card {
+        animation: cardAppear 1s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    @keyframes cardAppear {
+        from { opacity: 0; transform: translateY(40px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <div class="results-card">
+        <div class="circle-wrap">
+            <div class="score-percentage">{% if score is not None %}{{ score|floatformat:0 }}{% else %}{{ attempt.score|floatformat:0 }}{% endif %}%</div>
+        </div>
+
+        <h2>Section Mastered</h2>
+        <p class="feedback-text">
+            {% if score >= 80 %}
+                Impressive! You have shown deep respect for the heritage of <strong>{{ topic.name|default:topic.title }}</strong>. Your journey as a Guardian continues.
+            {% elif score >= 50 %}
+                Well done. You have grasped the essential wisdom of the <strong>{{ section_id }}</strong> chapter. There is still more to discover.
+            {% else %}
+                Return to the scrolls. Every true scholar must revisit the foundations to achieve true mastery.
+            {% endif %}
+        </p>
+
+        <div class="stats-row">
+            <div class="stat-item">
+                <span>Accuracy</span>
+                <strong>{% if score is not None %}{{ score|floatformat:1 }}{% else %}{{ attempt.score|floatformat:1 }}{% endif %}%</strong>
+            </div>
+            {% if points_earned is not None %}
+            <div class="stat-item">
+                <span>Points Earned</span>
+                <strong style="color: var(--accent-green);">+{{ points_earned }}</strong>
+            </div>
+            <div class="stat-item">
+                <span>Total Pts</span>
+                <strong>{{ new_total_points }}</strong>
+            </div>
+            {% else %}
+            <div class="stat-item">
+                <span>Questions</span>
+                <strong>{% if questions %}{{ questions|length }}{% else %}{{ attempt.quiz.questions.count }}{% endif %}</strong>
+            </div>
+            {% endif %}
+        </div>
+
+        <a href="/topic/{{ topic.id }}/study/#{{ section_id }}" class="btn-return">
+            Back to Study Archives
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,392 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if is_mini_quiz %}Section Quiz{% else %}Assessment{% endif %} | {% firstof topic.name topic.title %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --bg-bone: #f4f1ea;
+        --bg-academic: #ebe7df;
+        --text-dark: #0e0e0e;
+        --accent-gold: #b38b4d;
+        --accent-green: #2d6a4f;
+        --accent-blue: #21436e;
+        --accent-pink: #d90429;
+        --border-subtle: rgba(0, 0, 0, 0.08);
+    }
+
+    body {
+        background-color: var(--bg-bone);
+        color: var(--text-dark);
+        font-family: 'Inter', sans-serif;
+        background-image: 
+            radial-gradient(at 0% 0%, rgba(179, 139, 77, 0.03) 0, transparent 50%), 
+            radial-gradient(at 100% 100%, rgba(45, 106, 79, 0.03) 0, transparent 50%);
+    }
+
+    /* --- Quiz Container --- */
+    .quiz-container {
+        max-width: 900px;
+        margin: 140px auto 100px;
+        padding: 0 20px;
+    }
+
+    /* --- Header --- */
+    .quiz-header {
+        text-align: center;
+        margin-bottom: 60px;
+    }
+
+    .quiz-header span {
+        font-size: 0.7rem;
+        color: var(--accent-gold);
+        font-weight: 700;
+        letter-spacing: 5px;
+        text-transform: uppercase;
+        display: block;
+        margin-bottom: 15px;
+    }
+
+    .quiz-header h1 {
+        font-family: 'Tenor Sans', serif;
+        font-size: 2.5rem;
+        letter-spacing: 2px;
+        color: var(--text-dark);
+        margin-bottom: 10px;
+    }
+
+    .progress-bracket {
+        font-size: 0.8rem;
+        color: #666;
+        letter-spacing: 2px;
+        font-weight: 500;
+    }
+
+    /* --- Progress Bar --- */
+    .progress-stairway {
+        height: 2px;
+        background: rgba(0,0,0,0.05);
+        width: 100%;
+        margin: 30px 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: var(--accent-gold);
+        width: 0%;
+        transition: width 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    /* --- Question Card --- */
+    .question-window {
+        background: #fff;
+        border: 1px solid var(--border-subtle);
+        border-radius: 20px;
+        padding: 60px 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.02);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .question-stair-label {
+        font-family: 'Tenor Sans', serif;
+        font-size: 0.9rem;
+        color: var(--accent-gold);
+        margin-bottom: 30px;
+        display: block;
+    }
+
+    .question-text {
+        font-family: 'Tenor Sans', serif;
+        font-size: 1.8rem;
+        line-height: 1.4;
+        color: var(--text-dark);
+        margin-bottom: 50px;
+    }
+
+    /* --- Choices Grid --- */
+    .choices-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        gap: 20px;
+    }
+
+    .choice-item {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .choice-item input {
+        display: none;
+    }
+
+    .choice-box {
+        background: #fff;
+        border: 1px solid #eee;
+        padding: 25px 25px 25px 70px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        display: block;
+        color: #444;
+    }
+
+    .choice-letter {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 50px;
+        background: var(--bg-academic);
+        color: #888;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px 0 0 12px;
+        font-size: 1.1rem;
+        font-weight: 800;
+        transition: all 0.3s ease;
+    }
+
+    .choice-item:hover .choice-box {
+        border-color: var(--accent-gold);
+        background: #fafafa;
+        transform: translateY(-2px);
+    }
+
+    .choice-item input:checked + .choice-box {
+        background: var(--text-dark);
+        color: #fff;
+        border-color: var(--text-dark);
+    }
+
+    .choice-item input:checked + .choice-box .choice-letter {
+        background: var(--accent-gold);
+        color: #fff;
+    }
+
+    /* --- Hidden Questions --- */
+    .question-step {
+        display: none;
+        animation: stepEnter 0.6s ease-out;
+    }
+
+    .question-step.active {
+        display: block;
+    }
+
+    @keyframes stepEnter {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- Controls --- */
+    .quiz-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 40px;
+    }
+
+    .btn-quiz {
+        background: transparent;
+        border: 1px solid var(--border-subtle);
+        padding: 15px 35px;
+        border-radius: 8px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .btn-quiz:hover {
+        background: var(--bg-academic);
+        border-color: var(--accent-gold);
+        color: var(--accent-gold);
+    }
+
+    .btn-submit {
+        background: var(--accent-gold);
+        color: #fff;
+        border-color: var(--accent-gold);
+    }
+
+    .btn-submit:hover {
+        background: var(--text-dark);
+        color: #fff;
+        border-color: var(--text-dark);
+    }
+
+    .guide-tip {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px 25px;
+        background: rgba(179, 139, 77, 0.05);
+        border-left: 3px solid var(--accent-gold);
+        border-radius: 4px;
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 40px;
+    }
+
+    @media (max-width: 600px) {
+        .question-window { padding: 40px 20px; }
+        .question-text { font-size: 1.4rem; }
+        .choices-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <header class="quiz-header">
+        <span>{% if is_mini_quiz %}Knowledge Check{% else %}Assessment{% endif %}</span>
+        <h1>{% firstof topic.name topic.title %}</h1>
+        <div class="progress-bracket">
+            Question <span id="currentNum">1</span> of {{ questions|length }}
+        </div>
+        <div class="progress-stairway">
+            <div class="progress-bar-fill" id="progressBar"></div>
+        </div>
+    </header>
+
+    <form id="quizForm" method="post">
+        {% csrf_token %}
+        
+        {% for q in questions %}
+        <div class="question-step {% if forloop.first %}active{% endif %}" id="step-{{ forloop.counter }}">
+            <div class="question-window">
+                <span class="question-stair-label">Module Section &mdash; {{ section_id|default:"Assessment" }}</span>
+                
+                <div class="guide-tip">
+                    <i class="fa-solid fa-feather-pointed" style="color: var(--accent-gold);"></i>
+                    <span><strong>Proverb:</strong> "The roots of heritage are deep; focus your mind to unveil the truth."</span>
+                </div>
+
+                <div class="question-text">
+                    {{ q.question_text }}
+                </div>
+
+                <div class="choices-grid">
+                    <label class="choice-item">
+                        <input type="radio" name="q_{{ q.id }}" value="A" required>
+                        <div class="choice-box">
+                            <div class="choice-letter">A</div>
+                            {{ q.option_a }}
+                        </div>
+                    </label>
+
+                    <label class="choice-item">
+                        <input type="radio" name="q_{{ q.id }}" value="B">
+                        <div class="choice-box">
+                            <div class="choice-letter">B</div>
+                            {{ q.option_b }}
+                        </div>
+                    </label>
+
+                    <label class="choice-item">
+                        <input type="radio" name="q_{{ q.id }}" value="C">
+                        <div class="choice-box">
+                            <div class="choice-letter">C</div>
+                            {{ q.option_c }}
+                        </div>
+                    </label>
+
+                    <label class="choice-item">
+                        <input type="radio" name="q_{{ q.id }}" value="D">
+                        <div class="choice-box">
+                            <div class="choice-letter">D</div>
+                            {{ q.option_d }}
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="quiz-controls">
+            <button type="button" class="btn-quiz" id="prevBtn" style="visibility: hidden;">Previous</button>
+            
+            <div style="flex: 1;"></div>
+
+            <button type="button" class="btn-quiz" id="nextBtn" {% if questions|length <= 1 %}style="display:none;"{% endif %}>
+                Next <i class="fa-solid fa-arrow-right-long ms-2"></i>
+            </button>
+            <button type="submit" class="btn-quiz btn-submit" id="submitBtn" {% if questions|length > 1 %}style="display:none;"{% endif %}>
+                Complete Assessment
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    let currentStep = 1;
+    const totalSteps = Number("{{ questions|length|default:0 }}");
+
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const progressBar = document.getElementById('progressBar');
+    const currentNum = document.getElementById('currentNum');
+
+    function updateView() {
+        // Toggle step visibility
+        document.querySelectorAll('.question-step').forEach(step => step.classList.remove('active'));
+        document.getElementById(`step-${currentStep}`).classList.add('active');
+
+        // Update progress UI
+        currentNum.textContent = currentStep;
+        progressBar.style.width = ((currentStep / totalSteps) * 100) + '%';
+
+        // Update buttons
+        prevBtn.style.visibility = (currentStep > 1) ? 'visible' : 'hidden';
+        
+        if (currentStep === totalSteps) {
+            if (nextBtn) nextBtn.style.display = 'none';
+            submitBtn.style.display = 'block';
+        } else {
+            if (nextBtn) nextBtn.style.display = 'block';
+            submitBtn.style.display = 'none';
+        }
+        
+        window.scrollTo({ top: 100, behavior: 'smooth' });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            // Check if current question is answered
+            const currentInputs = document.querySelectorAll(`#step-${currentStep} input[type="radio"]`);
+            const checked = Array.from(currentInputs).some(i => i.checked);
+            
+            if (!checked) {
+                alert("Please select an answer before proceeding.");
+                return;
+            }
+
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateView();
+            }
+        });
+    }
+
+    prevBtn.addEventListener('click', () => {
+        if (currentStep > 1) {
+            currentStep--;
+            updateView();
+        }
+    });
+
+    // Initial progress bar
+    progressBar.style.width = ((1 / totalSteps) * 100) + '%';
+</script>
+{% endblock %}

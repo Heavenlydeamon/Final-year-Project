@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% load markdown_extras %}
+
+{% block title %}{{ story.title }} - {{ node.title }} | Narrative Journey{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --bg-sepia: #f4ece1;
+        --text-ink: #2c241a;
+        --accent-burgundy: #6b2d2d;
+        --accent-gold: #b38b4d;
+    }
+
+    body {
+        background-color: var(--bg-sepia);
+        color: var(--text-ink);
+        font-family: 'Crimson Pro', serif;
+        overflow-x: hidden;
+    }
+
+    .story-nav {
+        background: white;
+        border-bottom: 2px solid var(--accent-gold);
+        padding: 15px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: fixed;
+        top: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+
+    .journey-container {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        height: 100vh;
+        margin-top: 60px;
+    }
+
+    .story-content {
+        padding: 60px 100px;
+        overflow-y: auto;
+        background: #fdfaf5;
+        border-right: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .node-header {
+        margin-bottom: 40px;
+        text-align: center;
+    }
+
+    .node-chapter {
+        font-family: 'Tenor Sans', serif;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        color: var(--accent-gold);
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .node-title {
+        font-family: 'Tenor Sans', serif;
+        font-size: 2.8rem;
+        color: var(--accent-burgundy);
+        margin-bottom: 30px;
+    }
+
+    .node-img {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .narrative-text {
+        font-size: 1.3rem;
+        line-height: 1.8;
+        color: #333;
+        margin-bottom: 60px;
+        white-space: pre-line;
+    }
+
+    .story-actions {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 40px;
+        padding-bottom: 100px;
+    }
+
+    .btn-next {
+        background: var(--accent-burgundy);
+        color: white;
+        padding: 15px 40px;
+        text-decoration: none;
+        font-family: 'Tenor Sans', serif;
+        font-weight: 700;
+        letter-spacing: 2px;
+        transition: 0.3s;
+        border-radius: 4px;
+        text-transform: uppercase;
+    }
+
+    .btn-next:hover {
+        background: #4a1f1f;
+        transform: translateY(-2px);
+    }
+
+    /* --- Companion Side Panel --- */
+    .companion-panel {
+        background: white;
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 60px);
+        position: relative;
+    }
+
+    .companion-header {
+        padding: 30px;
+        background: var(--accent-burgundy);
+        color: white;
+        text-align: center;
+    }
+
+    .companion-header h4 {
+        margin: 0;
+        font-family: 'Tenor Sans', serif;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    .companion-messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .message {
+        padding: 12px 18px;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        max-width: 90%;
+    }
+
+    .message.assistant {
+        background: #f8f1e9;
+        color: #2c241a;
+        align-self: flex-start;
+        border-bottom-left-radius: 2px;
+        border: 1px solid #e8dbcc;
+    }
+
+    .message.user {
+        background: var(--accent-gold);
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 2px;
+    }
+
+    .companion-input-area {
+        padding: 20px;
+        border-top: 1px solid #eee;
+        background: #fdfaf5;
+    }
+
+    .companion-input-group {
+        display: flex;
+        gap: 10px;
+        background: white;
+        padding: 10px;
+        border-radius: 30px;
+        border: 1px solid #ddd;
+    }
+
+    .companion-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: none;
+        padding: 0 10px;
+        font-family: inherit;
+    }
+
+    .btn-send {
+        background: var(--accent-burgundy);
+        color: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+    @media (max-width: 900px) {
+        .journey-container {
+            grid-template-columns: 1fr;
+        }
+        .companion-panel {
+            display: none; /* Hide on mobile for now, can be a popup */
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav class="story-nav">
+    <a href="{% url 'story_list' %}" style="text-decoration:none; color:var(--accent-burgundy); font-weight:700;">&larr; BACK TO JOURNEYS</a>
+    <div style="font-family:'Tenor Sans', serif; letter-spacing:2px; font-weight:700;">{{ story.title|upper }}</div>
+    <div style="width:100px;"></div>
+</nav>
+
+<div class="journey-container">
+    <main class="story-content">
+        <div class="node-header">
+            <span class="node-chapter">Chapter {{ node.order|add:1 }}</span>
+            <h1 class="node-title">{{ node.title }}</h1>
+        </div>
+
+        {% if node.image %}
+        <img src="{{ node.image.url }}" class="node-img" alt="{{ node.title }}">
+        {% endif %}
+
+        <div class="narrative-text">
+            {{ node.content|markdown|safe }}
+        </div>
+
+        <div class="story-actions">
+            {% if next_node %}
+            <a href="{% url 'next_story_node' story.id %}" class="btn-next">Continue Journey &rarr;</a>
+            {% else %}
+            <a href="{% url 'story_list' %}" class="btn-next" style="background:var(--accent-gold);">Journey Complete &rarr;</a>
+            {% endif %}
+        </div>
+    </main>
+
+    <aside class="companion-panel">
+        <div class="companion-header">
+            <h4>Spirit Companion</h4>
+            <p style="font-size: 0.7rem; margin-top: 5px; opacity: 0.8;">Ask about this chapter's secrets...</p>
+        </div>
+        
+        <div id="companion-messages" class="companion-messages">
+            <div class="message assistant">
+                I am here to guide you through the tale of <strong>{{ story.title }}</strong>. Do you have any questions about this part of the journey?
+            </div>
+        </div>
+
+        <div class="companion-input-area">
+            <div class="companion-input-group">
+                <input type="text" id="companion-input" class="companion-input" placeholder="Whisper your question..." onkeypress="handleCompanionKey(event)">
+                <button class="btn-send" onclick="sendCompanionMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<script>
+    function handleCompanionKey(e) {
+        if (e.key === 'Enter') sendCompanionMessage();
+    }
+
+    async function sendCompanionMessage() {
+        const input = document.getElementById('companion-input');
+        const message = input.value.trim();
+        if (!message) return;
+
+        const messagesContainer = document.getElementById('companion-messages');
+        
+        // User message
+        const userDiv = document.createElement('div');
+        userDiv.className = 'message user';
+        userDiv.textContent = message;
+        messagesContainer.appendChild(userDiv);
+        input.value = '';
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        // Loading
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'message assistant';
+        loadingDiv.textContent = 'Seeking answers...';
+        messagesContainer.appendChild(loadingDiv);
+
+        try {
+            const formData = new FormData();
+            formData.append('story_id', '{{ story.id }}');
+            formData.append('node_id', '{{ node.id }}');
+            formData.append('question', message);
+
+            const response = await fetch('{% url "story_companion_api" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                loadingDiv.textContent = data.answer;
+            } else {
+                loadingDiv.textContent = 'The spirits are quiet right now. Try again later.';
+            }
+        } catch (e) {
+            loadingDiv.textContent = 'The journey is clouded. Please try again.';
+        }
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+</script>
+{% endblock %}

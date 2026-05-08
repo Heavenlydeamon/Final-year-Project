@@ -1,0 +1,70 @@
+{% extends 'teacher/teacher_base.html' %}
+
+{% block title %}Student Roster - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}Academic Registry{% endblock %}
+{% block page_subtitle %}Review and manage all students enrolled across your classes.{% endblock %}
+
+{% block teacher_extra_css %}
+<style>
+    .student-item-p {
+        border-left: 4px solid var(--accent-gold);
+        transition: 0.3s;
+    }
+    .student-item-p:hover { transform: translateY(-5px); }
+    .student-meta-p { display: flex; gap: 15px; margin-top: 10px; }
+    .meta-tag-p {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        background: #f1f5f9;
+        padding: 4px 10px;
+        border-radius: 50px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block teacher_content %}
+<div class="view-students-wrapper">
+    
+    <div class="filter-bar-p mb-4 d-flex justify-content-between align-items-center">
+        <h3 class="card-label-p m-0">Enrolled Students ({{ students|length }})</h3>
+        <div class="d-flex gap-2">
+            <a href="{% url 'teacher_add_students' %}" class="btn btn-sm btn-dark rounded-pill px-4">Add Student</a>
+        </div>
+    </div>
+
+    <div class="bento-grid-p">
+        {% for student in students %}
+        <div class="bento-col-12 bento-card-p student-item-p">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="avatar-p" style="width: 50px; height: 50px; background: var(--accent-gold-light); color: var(--accent-gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 800;">
+                        {{ student.user.username|first|upper }}
+                    </div>
+                    <div>
+                        <h5 class="fw-bold m-0">{{ student.user.username }}</h5>
+                        <div class="student-meta-p">
+                            <span class="meta-tag-p"><i class="fa-solid fa-envelope"></i> {{ student.user.email|default:"No email" }}</span>
+                            <span class="meta-tag-p"><i class="fa-solid fa-calendar-day"></i> Joined {{ student.user.date_joined|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'teacher_view_student_performance' student.user.id %}" class="btn btn-sm btn-dark rounded-pill px-4 fw-bold">View Analytics</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="bento-col-12 bento-card-p text-center py-5">
+            <div style="font-size: 4rem; opacity: 0.1;" class="mb-3"><i class="fa-solid fa-user-slash"></i></div>
+            <p class="text-muted">No students registered in your classes yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

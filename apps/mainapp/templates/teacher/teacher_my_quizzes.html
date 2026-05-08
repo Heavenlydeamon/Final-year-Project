@@ -1,0 +1,170 @@
+{% extends 'teacher/teacher_base.html' %}
+{% load static %}
+
+{% block title %}Quiz Repository - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}Assessment Vault{% endblock %}
+{% block page_subtitle %}Manage AI-generated assessments and draft question sets.{% endblock %}
+
+{% block teacher_extra_css %}
+<style>
+    .filter-bar-p {
+        background: white;
+        padding: 20px;
+        border-radius: 20px;
+        margin-bottom: 30px;
+        border: 1px solid var(--card-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    .status-draft { background: #64748b; }
+    .status-pending { background: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+    .status-approved { background: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+    .status-rejected { background: #ef4444; }
+</style>
+{% endblock %}
+
+{% block teacher_content %}
+<div class="my-quizzes-wrapper">
+    
+    <div class="filter-bar-p">
+        <form method="get" class="d-flex align-items-center gap-3">
+            <label class="small fw-bold text-muted text-uppercase">Filter Status:</label>
+            <select name="status" class="form-select border-0 bg-light rounded-pill px-4" style="width: 200px;">
+                <option value="">All Repositories</option>
+                <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Drafts</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending Approval</option>
+                <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved Live</option>
+            </select>
+            <button type="submit" class="btn btn-dark rounded-pill px-4">Apply</button>
+        </form>
+        
+        <a href="{% url 'teacher_ai_quiz_generator' %}" class="btn-p-pill btn-gold-p">
+            <i class="fas fa-plus me-2"></i> Generate New
+        </a>
+    </div>
+
+    {% if quizzes %}
+    <div class="bento-card-p p-0 overflow-hidden">
+        <table class="table-v2 m-0">
+            <thead>
+                <tr>
+                    <th>Assessment Title</th>
+                    <th>Curriculum Stream</th>
+                    <th>Type</th>
+                    <th>Questions</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for quiz in quizzes %}
+                <tr>
+                    <td>
+                        <div class="fw-bold">{{ quiz.title }}</div>
+                        <div class="extra-small text-muted">{{ quiz.generated_at|date:"M d, Y" }}</div>
+                    </td>
+                    <td>{{ quiz.section.name }}</td>
+                    <td>
+                        {% if quiz.content_type == 'general' %}
+                        <span class="badge bg-light text-dark border">GENERAL</span>
+                        {% else %}
+                        <span class="badge bg-primary-subtle text-primary border-primary-subtle">CLASS: {{ quiz.class_obj.name|default:"N/A" }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center fw-bold">{{ quiz.questions.count }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="status-dot status-{{ quiz.status }}"></span>
+                            <span class="small fw-bold text-uppercase">{{ quiz.status }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'teacher_preview_quiz' quiz.id %}" class="btn btn-sm btn-outline-dark rounded-pill px-3">Preview</a>
+                            {% if quiz.status == 'approved' %}
+                            <button class="btn btn-sm btn-success rounded-pill px-3 convert-quiz" data-id="{{ quiz.id }}">Deploy</button>
+                            {% endif %}
+                            {% if quiz.status == 'draft' %}
+                            <button class="btn btn-sm btn-outline-danger rounded-pill delete-quiz" data-id="{{ quiz.id }}"><i class="fa-solid fa-trash"></i></button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bento-card-p text-center py-5">
+        <div style="font-size: 3rem; opacity: 0.2;" class="mb-3"><i class="fa-solid fa-folder-open"></i></div>
+        <h4 class="text-muted">No quizzes found matching your criteria.</h4>
+        <p class="small text-muted">Generate a new quiz using AI to get started.</p>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Delete Confirmation Modal (Standardized for Bento) -->
+<div id="deleteModal" class="modal-p">
+    <div class="bento-card-p" style="width: 400px; background: white;">
+        <h5 class="fw-bold mb-3">Confirm Deletion</h5>
+        <p class="text-muted small mb-4">Are you sure you want to delete this assessment? This action cannot be undone.</p>
+        <div class="d-flex gap-2">
+            <button type="button" id="confirmDelete" class="btn btn-danger rounded-pill w-100 fw-bold">Delete Permanently</button>
+            <button type="button" onclick="closeDeleteModal()" class="btn btn-outline-dark rounded-pill w-100">Cancel</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block teacher_extra_js %}
+<script>
+    let quizToDelete = null;
+
+    $(document).ready(function() {
+        $('.delete-quiz').click(function() {
+            quizToDelete = $(this).data('id');
+            $('#deleteModal').css('display', 'flex');
+        });
+
+        $('#confirmDelete').click(function() {
+            if (quizToDelete) {
+                $.ajax({
+                    url: '{% url "teacher_delete_quiz" quiz_id=0 %}'.replace('0', quizToDelete),
+                    method: 'POST',
+                    data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+                    success: function() { location.reload(); },
+                    error: function(xhr) { alert(xhr.responseJSON?.error || 'Error deleting quiz'); }
+                });
+            }
+            closeDeleteModal();
+        });
+
+        $('.convert-quiz').click(function() {
+            const quizId = $(this).data('id');
+            if (confirm('Deploy this quiz to the permanent question bank?')) {
+                $.ajax({
+                    url: '{% url "convert_quiz_to_questions" quiz_id=0 %}'.replace('0', quizId),
+                    method: 'POST',
+                    data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+                    success: function(response) { alert(response.message); location.reload(); },
+                    error: function(xhr) { alert(xhr.responseJSON?.error || 'Deployment failed'); }
+                });
+            }
+        });
+    });
+
+    function closeDeleteModal() { $('#deleteModal').hide(); }
+</script>
+{% endblock %}

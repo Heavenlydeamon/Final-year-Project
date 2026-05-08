@@ -1,0 +1,285 @@
+{% extends 'student/student_base.html' %}
+{% load static %}
+
+{% block title %}Join Class - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}Academic Registry{% endblock %}
+{% block page_subtitle %}Connect with institutions and mentors to unlock specialized heritage courses.{% endblock %}
+
+{% block student_extra_css %}
+<style>
+    .institution-card {
+        background: white;
+        border: 1px solid rgba(0,0,0,0.05);
+        margin-bottom: 3rem;
+        position: relative;
+    }
+    
+    .institution-header {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f1f5f9;
+    }
+    
+    .institution-icon {
+        width: 60px;
+        height: 60px;
+        background: #f8fafc;
+        border-radius: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: var(--success-green);
+        box-shadow: inset 0 0 15px rgba(0,0,0,0.03);
+    }
+    
+    .institution-name {
+        font-family: 'Tenor Sans', serif;
+        font-size: 1.8rem;
+        margin: 0;
+        color: var(--sidebar-bg);
+        letter-spacing: 1px;
+    }
+
+    .teacher-block {
+        margin-left: 2rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .teacher-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 1.25rem;
+        background: #f1f5f9;
+        border-radius: 100px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--text-main);
+        margin-bottom: 1.5rem;
+    }
+
+    .class-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .class-card {
+        background: #fafafa;
+        border: 1px solid #eef2f6;
+        border-radius: 1.5rem;
+        padding: 1.5rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .class-card:hover {
+        background: white;
+        box-shadow: 0 15px 30px rgba(0,0,0,0.05);
+        border-color: #fbbf24;
+        transform: translateY(-5px);
+    }
+
+    .class-name {
+        font-family: 'Tenor Sans', serif;
+        font-size: 1.2rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        color: var(--sidebar-bg);
+    }
+
+    .class-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+
+    .meta-item i {
+        width: 16px;
+        color: #94a3b8;
+    }
+
+    .join-form textarea {
+        width: 100%;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s;
+        resize: none;
+    }
+
+    .join-form textarea:focus {
+        background: white;
+        border-color: #fbbf24;
+        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.1);
+        outline: none;
+    }
+
+    .btn-join {
+        background: var(--sidebar-bg);
+        color: white;
+        border: none;
+        padding: 0.75rem;
+        border-radius: 1rem;
+        font-weight: 700;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-join:hover {
+        background: #fbbf24;
+        color: var(--sidebar-bg);
+        transform: scale(1.02);
+    }
+
+    .status-pending {
+        background: rgba(251, 191, 36, 0.1);
+        color: #b45309;
+        border: 1px solid rgba(251, 191, 36, 0.2);
+        padding: 0.75rem;
+        border-radius: 1rem;
+        text-align: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .empty-container {
+        text-align: center;
+        padding: 5rem 2rem;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        margin-bottom: 2rem;
+        opacity: 0.3;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+        animation: fadeIn 0.5s ease forwards;
+    }
+</style>
+{% endblock %}
+
+{% block student_content %}
+<div class="row">
+    <div class="col-12">
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="bento-card p-3 mb-2 {% if message.tags == 'success' %}bg-success text-white{% else %}bg-danger text-white{% endif %}" style="border-radius: 1rem;">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+                    <span class="fw-bold">{{ message }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if not classes_by_institution %}
+        <div class="bento-card empty-container">
+            <div class="empty-icon">🏫</div>
+            <h2 style="font-family: 'Tenor Sans';">No Classes Found</h2>
+            <p class="text-muted">There are no available classes to join at the moment.</p>
+            <a href="{% url 'student_dashboard' %}" class="btn-join mt-3 px-4" style="display: inline-flex;">Return to Console</a>
+        </div>
+        {% else %}
+        
+        {% for institution_data in classes_by_institution.values %}
+        <div class="bento-card institution-card animate-in">
+            <div class="institution-header">
+                <div class="institution-icon">
+                    <i class="fa-solid fa-school"></i>
+                </div>
+                <div>
+                    <h3 class="institution-name">{{ institution_data.name }}</h3>
+                    <div class="text-muted small fw-bold">REGISTERED CAMPUS</div>
+                </div>
+            </div>
+            
+            {% for teacher_data in institution_data.teachers.values %}
+            <div class="teacher-block">
+                <div class="teacher-badge">
+                    <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed={{ teacher_data.teacher.username }}" style="width: 24px; height: 24px; border-radius: 4px;">
+                    Mentor: {{ teacher_data.teacher.username }}
+                </div>
+                
+                <div class="class-grid">
+                    {% for class in teacher_data.classes %}
+                    <div class="class-card">
+                        <div>
+                            <div class="class-name">{{ class.name }}</div>
+                            <div class="class-meta">
+                                <div class="meta-item">
+                                    <i class="fa-solid fa-users"></i>
+                                    {{ class.students.count }} Scholars Enrolled
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fa-solid fa-calendar-days"></i>
+                                    Active since {{ class.teacher.date_joined|date:"M Y" }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-auto">
+                            {% if class.id in pending_class_ids %}
+                            <div class="status-pending">
+                                <i class="fa-solid fa-hourglass-half"></i>
+                                Request Pending Review
+                            </div>
+                            {% else %}
+                            <form method="POST" class="join-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="class_id" value="{{ class.id }}">
+                                <textarea name="message" placeholder="Introduction for your mentor..." rows="2"></textarea>
+                                <button type="submit" class="btn-join w-100">
+                                    Send Admission Request <i class="fa-solid fa-paper-plane ms-1"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

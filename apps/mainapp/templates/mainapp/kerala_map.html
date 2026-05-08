@@ -1,0 +1,494 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Kerala Discovery Map | Eco Heritage{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --map-bg: #0f1419;
+        --district-locked: #323d4d;
+        --district-hover: #4a5d78;
+        --district-active: #b38b4d;
+        --text-gold: #b38b4d;
+    }
+
+    body {
+        background-color: var(--map-bg) !important;
+        color: #f4f1ea !important;
+    }
+
+    .map-explorer-container {
+        max-width: 1400px;
+        margin: 1rem auto;
+        padding: 3rem;
+        background: #0f1419; /* Solid dark background for maximum contrast */
+        border-radius: 24px;
+        border: 1px solid rgba(179, 139, 77, 0.2);
+        box-shadow: 0 50px 100px rgba(0, 0, 0, 0.9);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .map-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        position: relative;
+        z-index: 10;
+    }
+
+    .map-header h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        color: #fff; /* Direct white for visibility */
+        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        text-transform: uppercase;
+        letter-spacing: 10px;
+    }
+
+    .map-header p {
+        color: var(--text-gold);
+        font-size: 1.1rem;
+        letter-spacing: 3px;
+        font-weight: 500;
+    }
+
+    .map-layout {
+        display: grid;
+        grid-template-columns: 350px 1fr 400px;
+        gap: 4rem;
+        align-items: start;
+        min-height: 900px;
+    }
+
+    /* Kerala SVG Styling */
+    .svg-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        min-height: 850px;
+    }
+
+    #kerala-svg {
+        width: 100%;
+        height: auto;
+        max-height: 950px;
+        filter: drop-shadow(0 20px 50px rgba(0,0,0,0.6));
+    }
+
+    .district {
+        fill: var(--district-locked);
+        stroke: rgba(255, 255, 255, 0.2);
+        stroke-width: 0.8;
+        transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        cursor: pointer;
+    }
+
+    .district:hover {
+        fill: var(--district-hover);
+        stroke: #fff;
+        stroke-width: 1.5;
+        transform: translateY(-5px);
+        filter: brightness(1.2) drop-shadow(0 10px 20px rgba(0,0,0,0.4));
+    }
+
+    .district.completed {
+        fill: var(--district-active);
+        stroke: #fff;
+        stroke-width: 1;
+    }
+
+    .district.active-selection {
+        fill: #fff !important;
+        stroke: var(--text-gold);
+        stroke-width: 2;
+    }
+
+    /* Info Cards Styling */
+    .info-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        opacity: 0;
+        transform: translateX(-30px);
+        transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .info-panel.visible {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .info-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 2rem;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s;
+    }
+
+    .info-card:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: var(--text-gold);
+        transform: scale(1.02);
+    }
+
+    .info-card h3 {
+        color: var(--text-gold);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .info-card .title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-family: 'Tenor Sans', serif;
+    }
+
+    .info-card .desc {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.6;
+    }
+
+    .btn-explore {
+        margin-top: 1.5rem;
+        width: 100%;
+        background: var(--text-gold);
+        color: #000;
+        border: none;
+        padding: 12px;
+        border-radius: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 0.75rem;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: block;
+        text-align: center;
+    }
+
+    .btn-explore:hover {
+        background: #fff;
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(179, 139, 77, 0.3);
+    }
+
+    /* District List/Stats */
+    .district-list {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+        max-height: 700px;
+        overflow-y: auto;
+        padding-right: 10px;
+    }
+
+    .district-list::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .district-list::-webkit-scrollbar-thumb {
+        background: var(--text-gold);
+        border-radius: 10px;
+    }
+
+    .list-item {
+        padding: 18px 25px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #fff !important; /* Force white text */
+        margin-bottom: 8px;
+    }
+
+    .list-item:hover {
+        background: rgba(179, 139, 77, 0.2);
+        border-color: var(--text-gold);
+        transform: translateX(5px);
+    }
+
+    .list-item.active {
+        background: rgba(179, 139, 77, 0.15);
+        border-color: var(--text-gold);
+    }
+
+    .list-item .name {
+        font-weight: 500;
+        letter-spacing: 1px;
+    }
+
+    .list-item .status {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #333;
+        display: inline-block;
+        margin-right: 10px;
+    }
+
+    .status-dot.completed {
+        background: var(--text-gold);
+        box-shadow: 0 0 10px var(--text-gold);
+    }
+
+    /* Floating Badges */
+    .badge-float {
+        position: absolute;
+        width: 120px;
+        height: 120px;
+        background: radial-gradient(circle, rgba(179, 139, 77, 0.2) 0%, transparent 70%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        pointer-events: none;
+        z-index: 5;
+    }
+
+    .badge-icon {
+        font-size: 2rem;
+        color: var(--text-gold);
+        margin-bottom: 5px;
+    }
+
+    /* Animations */
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 0.8; }
+        50% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 0.8; }
+    }
+
+    .pulse {
+        animation: pulse 2s infinite ease-in-out;
+    }
+
+    @media (max-width: 1024px) {
+        .map-layout {
+            grid-template-columns: 1fr;
+        }
+        .info-panel {
+            order: 2;
+        }
+        #kerala-svg {
+            order: 1;
+            max-height: 500px;
+        }
+        .district-list {
+            order: 3;
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="map-explorer-container">
+        <div class="map-header">
+            <h1>Kerala Discovery</h1>
+            <p>Explore the heritage, geography, and legends of the 14 districts</p>
+        </div>
+
+        <div class="map-layout">
+            <!-- Left Side: District List -->
+            <div class="district-list" id="districtList">
+                {% for d in district_data %}
+                <div class="list-item" data-district="{{ d.district.name }}" onclick="selectDistrict('{{ d.district.name }}')">
+                    <div class="d-flex align-items-center">
+                        <span class="status-dot {% if d.is_completed %}completed{% endif %}"></span>
+                        <span class="name">{{ d.district.name }}</span>
+                    </div>
+                    <span class="status">{% if d.is_completed %}Explored{% else %}Locked{% endif %}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Middle: Interactive SVG Map -->
+            <div class="svg-container text-center">
+                <svg id="kerala-svg" viewBox="70 10 200 830" xmlns="http://www.w3.org/2000/svg">
+                    <!-- High Fidelity Kerala Path with Districts -->
+                    <g id="districts-layer">
+                        <!-- North Kerala (Malabar) -->
+                        <path class="district" id="Kasaragod" d="M110 20 L130 25 L140 50 L120 70 L100 60 Z" data-name="Kasaragod" />
+                        <path class="district" id="Kannur" d="M100 60 L120 70 L130 110 L110 130 L90 110 Z" data-name="Kannur" />
+                        <path class="district" id="Wayanad" d="M130 70 L160 80 L170 120 L140 130 L130 110 Z" data-name="Wayanad" />
+                        <path class="district" id="Kozhikode" d="M90 110 L110 130 L125 180 L100 200 L80 170 Z" data-name="Kozhikode" />
+                        <path class="district" id="Malappuram" d="M100 200 L125 180 L150 220 L140 270 L110 280 L90 250 Z" data-name="Malappuram" />
+                        <path class="district" id="Palakkad" d="M150 180 L190 190 L210 250 L180 280 L140 270 L150 220 Z" data-name="Palakkad" />
+                        
+                        <!-- Central Kerala -->
+                        <path class="district" id="Thrissur" d="M110 280 L140 270 L160 330 L140 380 L100 370 L90 330 Z" data-name="Thrissur" />
+                        <path class="district" id="Ernakulam" d="M100 370 L140 380 L150 440 L120 470 L90 440 L85 410 Z" data-name="Ernakulam" />
+                        <path class="district" id="Idukki" d="M160 330 L200 350 L230 450 L200 500 L150 440 L160 330 Z" data-name="Idukki" />
+                        <path class="district" id="Kottayam" d="M120 470 L150 440 L170 520 L150 570 L120 550 Z" data-name="Kottayam" />
+                        <path class="district" id="Alappuzha" d="M90 440 L120 470 L120 550 L100 600 L80 570 Z" data-name="Alappuzha" />
+                        
+                        <!-- South Kerala (Travancore) -->
+                        <path class="district" id="Pathanamthitta" d="M150 570 L170 520 L200 560 L190 620 L160 630 Z" data-name="Pathanamthitta" />
+                        <path class="district" id="Kollam" d="M100 600 L120 550 L150 570 L160 630 L140 680 L110 680 Z" data-name="Kollam" />
+                        <path class="district" id="Thiruvananthapuram" d="M110 680 L140 680 L160 750 L140 820 L115 820 L100 750 Z" data-name="Thiruvananthapuram" />
+                    </g>
+                </svg>
+            </div>
+
+            <!-- Right Side: Details Panel -->
+            <div class="info-panel" id="infoPanel">
+                <div class="info-card" id="generalTopicCard">
+                    <h3><i class="fas fa-book-open"></i> Domain Knowledge</h3>
+                    <div class="title" id="generalTitle">Select a district</div>
+                    <div class="desc" id="generalDesc">Hover over the map to discover the topics affiliated with this region.</div>
+                    <a href="#" class="btn-explore" id="generalLink">Start Learning</a>
+                </div>
+
+                <div class="info-card" id="folkloreCard">
+                    <h3><i class="fas fa-mask"></i> Myth & Folklore</h3>
+                    <div class="title" id="folkloreTitle">Legend Awaits</div>
+                    <div class="desc" id="folkloreDesc">Explore the mystical stories and traditions unique to this district.</div>
+                    <a href="#" class="btn-explore" id="folkloreLink">Watch Story</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data passed from Django -->
+<script id="map-data" type="application/json">
+    {
+        {% for d in district_data %}
+        "{{ d.district.name }}": {
+            "is_completed": {{ d.is_completed|yesno:"true,false" }},
+            "general_name": "{{ d.general_topic.name }}",
+            "general_desc": "{{ d.general_topic.description|truncatewords:20 }}",
+            "general_url": "{% url 'topic_study' d.general_topic.id %}",
+            "folklore_name": "{{ d.folklore_topic.name|default:'General Folklore' }}",
+            "folklore_desc": "{{ d.folklore_topic.description|default:'Explore the rich oral traditions of this region.'|truncatewords:20 }}",
+            "folklore_url": "{% if d.folklore_topic %}{% url 'topic_study' d.folklore_topic.id %}{% else %}#{% endif %}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    }
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script>
+    const mapData = JSON.parse(document.getElementById('map-data').textContent);
+    const districts = document.querySelectorAll('.district');
+    const infoPanel = document.getElementById('infoPanel');
+    const listItems = document.querySelectorAll('.list-item');
+
+    // UI Elements
+    const generalTitle = document.getElementById('generalTitle');
+    const generalDesc = document.getElementById('generalDesc');
+    const generalLink = document.getElementById('generalLink');
+    const folkloreTitle = document.getElementById('folkloreTitle');
+    const folkloreDesc = document.getElementById('folkloreDesc');
+    const folkloreLink = document.getElementById('folkloreLink');
+
+    function selectDistrict(name) {
+        const data = mapData[name];
+        if (!data) return;
+
+        // Reset all
+        districts.forEach(d => d.classList.remove('active-selection'));
+        listItems.forEach(i => i.classList.remove('active'));
+
+        // Highlight
+        const districtEl = document.getElementById(name);
+        if (districtEl) districtEl.classList.add('active-selection');
+        
+        const listItem = document.querySelector(`.list-item[data-district="${name}"]`);
+        if (listItem) listItem.classList.add('active');
+
+        // Update Info Panel
+        infoPanel.classList.remove('visible');
+        
+        setTimeout(() => {
+            generalTitle.innerText = data.general_name;
+            generalDesc.innerText = data.general_desc;
+            generalLink.href = data.general_url;
+
+            folkloreTitle.innerText = data.folklore_name;
+            folkloreDesc.innerText = data.folklore_desc;
+            folkloreLink.href = data.folklore_url;
+            folkloreLink.style.display = data.folklore_url === '#' ? 'none' : 'block';
+
+            infoPanel.classList.add('visible');
+            
+            // Scroll list into view if needed
+            if (listItem) {
+                listItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }, 200);
+
+        // GSAP Animation
+        gsap.fromTo(".info-card", 
+            { y: 20, opacity: 0 }, 
+            { y: 0, opacity: 1, duration: 0.5, stagger: 0.1, ease: "power2.out" }
+        );
+    }
+
+    // Set initial state for completed districts
+    districts.forEach(d => {
+        const name = d.getAttribute('data-name');
+        if (mapData[name] && mapData[name].is_completed) {
+            d.classList.add('completed');
+        }
+
+        d.addEventListener('click', () => selectDistrict(name));
+        
+        d.addEventListener('mouseenter', () => {
+            gsap.to(d, { scale: 1.05, duration: 0.3 });
+        });
+        
+        d.addEventListener('mouseleave', () => {
+            gsap.to(d, { scale: 1, duration: 0.3 });
+        });
+    });
+
+    // Default selection
+    window.addEventListener('DOMContentLoaded', () => {
+        selectDistrict('Thiruvananthapuram');
+        
+        // Intro animation
+        gsap.from(".district", {
+            opacity: 0,
+            scale: 0.8,
+            duration: 1,
+            stagger: 0.05,
+            ease: "back.out(1.7)"
+        });
+        
+        gsap.from(".list-item", {
+            x: -50,
+            opacity: 0,
+            duration: 0.8,
+            stagger: 0.03,
+            delay: 0.5
+        });
+    });
+</script>
+{% endblock %}

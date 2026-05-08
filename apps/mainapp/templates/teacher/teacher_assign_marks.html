@@ -1,0 +1,218 @@
+{% extends 'teacher/teacher_base.html' %}
+
+{% block title %}Academic Grading - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}Evaluation Center{% endblock %}
+{% block page_subtitle %}Assign and manage internal marks for your active student rosters.{% endblock %}
+
+{% block teacher_extra_css %}
+<style>
+    .grading-card-p {
+        background: white;
+        border-radius: 24px;
+        padding: 35px;
+        border: 1px solid var(--card-border);
+        box-shadow: var(--shadow-sm);
+    }
+    .form-group-p { margin-bottom: 25px; }
+    .form-label-p {
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        margin-bottom: 10px;
+        display: block;
+    }
+    .form-input-p {
+        width: 100%;
+        padding: 14px 20px;
+        border-radius: 15px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        transition: 0.3s;
+        font-size: 0.95rem;
+    }
+    .form-input-p:focus {
+        border-color: var(--accent-gold);
+        background: white;
+        box-shadow: 0 0 0 4px var(--accent-gold-light);
+        outline: none;
+    }
+    .score-badge-p {
+        background: var(--sidebar-bg);
+        color: white;
+        width: 60px;
+        height: 60px;
+        border-radius: 18px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    .score-badge-p .val { font-size: 1.2rem; font-weight: 800; line-height: 1; }
+    .score-badge-p .max { font-size: 0.6rem; opacity: 0.7; }
+</style>
+{% endblock %}
+
+{% block teacher_content %}
+<div class="assign-marks-wrapper">
+    
+    {% if messages %}
+    <div class="alert-panel">
+        {% for message in messages %}
+        <div class="alert-box approved" style="background: white; border: 1px solid var(--card-border);">
+            <i class="fa-solid fa-circle-check text-success"></i>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="bento-grid-p">
+        <!-- Grading Form -->
+        <div class="bento-col-7">
+            <div class="grading-card-p">
+                <h4 class="card-label-p"><i class="fa-solid fa-pen-nib me-2 text-gold-p"></i> New Evaluation</h4>
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="form-group-p">
+                        <label class="form-label-p">Student Profile</label>
+                        <select name="student" id="studentSelect" class="form-input-p" required>
+                            <option value="">-- Choose Student --</option>
+                            {% for student in students %}
+                            <option value="{{ student.user.id }}" {% if selected_student.id == student.user.id %}selected{% endif %}>
+                                {{ student.user.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group-p">
+                        <label class="form-label-p">Academic Section</label>
+                        <select name="section" id="sectionSelect" class="form-input-p" required>
+                            <option value="">-- Choose Section --</option>
+                            {% for section in sections %}
+                            <option value="{{ section.id }}">{{ section.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group-p">
+                        <label class="form-label-p">Specific Topic (Optional)</label>
+                        <select name="topic" id="topicSelect" class="form-input-p">
+                            <option value="">-- Choose Topic (Updates Performance) --</option>
+                            {% for topic in all_topics %}
+                            <option value="{{ topic.id }}" data-section="{{ topic.section.id }}">{{ topic.name }} ({{ topic.section.name }})</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted extra-small mt-1 d-block">Selecting a topic will update the student's mastery in their dashboard.</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group-p">
+                                <label class="form-label-p">Marks Obtained</label>
+                                <input type="number" name="marks" class="form-input-p" required min="0" placeholder="0">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group-p">
+                                <label class="form-label-p">Max Cap</label>
+                                <input type="number" name="max_marks" class="form-input-p" value="100" min="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group-p">
+                        <label class="form-label-p">Professional Remarks</label>
+                        <textarea name="remarks" class="form-input-p" rows="3" placeholder="Notes on performance..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-p-pill btn-gold-p w-100 py-3 mt-2">
+                        Deploy Grade <i class="fa-solid fa-cloud-arrow-up ms-2"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- History/Stats -->
+        <div class="bento-col-5">
+            {% if selected_student %}
+            <div class="bento-card-p" style="height: 100%;">
+                <h4 class="card-label-p">Portfolio: {{ selected_student.username }}</h4>
+                <div class="history-scroll-p" style="max-height: 500px; overflow-y: auto;">
+                    {% for mark in student_marks %}
+                    <div class="d-flex align-items-center justify-content-between p-3 rounded-4 bg-light mb-3 border">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold small">{{ mark.section.name }}</div>
+                            <div class="extra-small text-muted">{{ mark.date_assigned|date:"M d, Y" }}</div>
+                            {% if mark.remarks %}<div class="extra-small mt-1 italic">"{{ mark.remarks|truncatechars:40 }}"</div>{% endif %}
+                        </div>
+                        <div class="score-badge-p ms-3">
+                            <span class="val">{{ mark.marks }}</span>
+                            <span class="max">/ {{ mark.max_marks }}</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted small">No historical data for this student.</div>
+                    {% endfor %}
+                </div>
+                <div class="mt-auto pt-4 border-top">
+                    <a href="{% url 'teacher_view_student_performance' selected_student.id %}" class="btn btn-sm btn-outline-dark w-100 rounded-pill">View Deep Analytics</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="bento-card-p h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                <div style="font-size: 4rem; opacity: 0.1;" class="mb-3"><i class="fa-solid fa-award"></i></div>
+                <h5 class="fw-bold">Student Record</h5>
+                <p class="text-muted small px-4">Select a student from the form to view their evaluation history and existing marks.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+{% block teacher_extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const studentSelect = document.getElementById('studentSelect');
+        const sectionSelect = document.getElementById('sectionSelect');
+        const topicSelect = document.getElementById('topicSelect');
+        const allTopicOptions = Array.from(topicSelect.options).slice(1);
+
+        // Auto-load history when student changes
+        studentSelect.addEventListener('change', function() {
+            if (this.value) {
+                window.location.href = `/teacher/assign-marks/${this.value}/`;
+            } else {
+                window.location.href = '/teacher/assign-marks/';
+            }
+        });
+
+        sectionSelect.addEventListener('change', function() {
+            const selectedSectionId = this.value;
+            
+            // Clear current topics (except first)
+            topicSelect.innerHTML = '<option value="">-- Choose Topic (Updates Performance) --</option>';
+            
+            if (selectedSectionId) {
+                // Filter and add relevant topics
+                const filtered = allTopicOptions.filter(opt => opt.dataset.section === selectedSectionId);
+                filtered.forEach(opt => {
+                    topicSelect.add(opt.cloneNode(true));
+                });
+            } else {
+                // Show all if no section selected
+                allTopicOptions.forEach(opt => {
+                    topicSelect.add(opt.cloneNode(true));
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <!-- Header -->
+    <div class="mb-10 flex justify-between items-center">
+        <div>
+            <h1 class="text-4xl font-black text-white tracking-tight">Teacher <span class="text-cyan-400">Dashboard</span></h1>
+            <p class="text-gray-400 mt-2 font-medium">Welcome back, {{ request.user.username }}. Manage your classroom sessions and student groups.</p>
+        </div>
+        <div class="px-4 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-xl text-cyan-400 text-xs font-bold uppercase tracking-widest">
+            Kerala Heritage Educator
+        </div>
+    </div>
+
+    <!-- Tier Tabs -->
+    <div class="mb-12 border-b border-white/10">
+        <nav class="flex space-x-8" aria-label="Tabs">
+            <button onclick="switchTab('lower')" id="tab-lower" class="border-cyan-500 text-white border-b-2 py-4 px-1 text-sm font-bold uppercase tracking-widest transition-all">
+                Lower Class (T1)
+            </button>
+            <button onclick="switchTab('higher')" id="tab-higher" class="border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-300 border-b-2 py-4 px-1 text-sm font-bold uppercase tracking-widest transition-all">
+                Higher Class (T2)
+            </button>
+        </nav>
+    </div>
+
+    <!-- LOWER CLASS TIER -->
+    <div id="panel-lower" class="space-y-12">
+        <!-- Guest Classes Management -->
+        <section>
+            <div class="flex justify-between items-end mb-6">
+                <h2 class="text-xl font-extrabold text-white">Your Guest Classes</h2>
+                <button class="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">+ New Class</button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for cls in lower_classes %}
+                <div class="bg-white/5 border border-white/10 rounded-3xl p-8 hover:border-cyan-500/50 transition-all group">
+                    <h3 class="text-2xl font-black text-white mb-2">{{ cls.name }}</h3>
+                    <p class="text-cyan-400 text-xs font-bold uppercase tracking-widest mb-6">{{ cls.grade }}</p>
+                    
+                    <div class="flex gap-4 mb-8">
+                        <div class="flex-1 p-3 bg-white/5 rounded-2xl border border-white/5">
+                            <p class="text-[8px] text-gray-500 uppercase font-black tracking-widest">Guest Students</p>
+                            <p class="text-lg font-black text-white">{{ cls.manual_students.count }}</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <a href="{% url 'teacher_class_detail' cls.id %}" class="block w-full py-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl text-center text-xs font-bold uppercase tracking-wider transition-all">Manage Students</a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-span-full py-20 text-center opacity-30">
+                    <p class="text-lg font-bold uppercase italic tracking-[0.2em]">No guest classes managed yet</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Topic Browser -->
+        <section>
+            <div class="flex justify-between items-end mb-6">
+                <h2 class="text-xl font-extrabold text-white">Projection Topics</h2>
+                <a href="#" class="text-xs text-cyan-400 hover:underline font-bold uppercase tracking-wider">Browse All</a>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for topic in lower_topics %}
+                <div class="group relative bg-white/5 border border-white/10 rounded-3xl overflow-hidden hover:border-cyan-500/50 transition-all duration-500">
+                    <div class="aspect-video w-full overflow-hidden">
+                        {% if topic.thumbnail %}
+                        <img src="{{ topic.thumbnail.url }}" alt="{{ topic.title }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        {% else %}
+                        <div class="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center text-gray-600 font-black italic">NO THUMBNAIL</div>
+                        {% endif %}
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="px-2 py-1 bg-cyan-500/10 text-cyan-400 text-[10px] font-black uppercase tracking-tighter rounded">{{ topic.get_category_display }}</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">{{ topic.title }}</h3>
+                        <p class="text-gray-400 text-sm line-clamp-2 mb-6">{{ topic.description }}</p>
+                        
+                        <a href="{% url 'learning_sessions:start_session' topic.id %}" class="block w-full text-center py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-cyan-500/10">
+                            Launch Projection
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-span-full py-20 text-center opacity-30">
+                    <p class="text-lg font-bold uppercase italic tracking-[0.2em]">No topics published yet</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Session History -->
+        <section class="max-w-4xl">
+            <h2 class="text-xl font-extrabold text-white mb-6">Recent Sessions</h2>
+            <div class="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-white/5 border-b border-white/10">
+                        <tr>
+                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Topic</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Date</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                            <th class="px-6 py-4"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        {% for session in recent_sessions %}
+                        <tr class="hover:bg-white/5 transition-colors">
+                            <td class="px-6 py-4 font-bold text-white">{{ session.topic.title }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-400">{{ session.started_at|date:"M d, Y" }}</td>
+                            <td class="px-6 py-4">
+                                {% if session.ended_at %}
+                                <span class="px-2 py-1 bg-green-500/10 text-green-400 text-[10px] font-black uppercase rounded">Completed</span>
+                                {% else %}
+                                <span class="px-2 py-1 bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase rounded">Active</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <a href="{% url 'learning_sessions:projection_view' session.id %}" class="text-cyan-400 hover:text-white text-xs font-bold uppercase">Resume</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="px-6 py-10 text-center text-gray-600 font-bold italic">No session history found</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Topic Mastery Trends -->
+        <section>
+            <div class="flex justify-between items-end mb-6">
+                <h2 class="text-xl font-extrabold text-white">Topic Mastery <span class="text-cyan-400">Trends</span></h2>
+                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Aggregate Data</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for stat in topic_stats %}
+                <div class="bg-white/5 border border-white/10 rounded-3xl p-6">
+                    <h4 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">{{ stat.topic.title }}</h4>
+                    
+                    <div class="space-y-4">
+                        <!-- Progress Bar Stack -->
+                        <div class="w-full h-3 bg-white/5 rounded-full overflow-hidden flex">
+                            <div class="h-full bg-green-500 js-mastery-bar" data-pct="{{ stat.good_pct }}" title="Got It: {{ stat.good_pct }}%"></div>
+                            <div class="h-full bg-amber-500 js-mastery-bar" data-pct="{{ stat.mixed_pct }}" title="Mixed: {{ stat.mixed_pct }}%"></div>
+                            <div class="h-full bg-red-500 js-mastery-bar" data-pct="{{ stat.struggled_pct }}" title="Struggled: {{ stat.struggled_pct }}%"></div>
+                        </div>
+                        
+                        <!-- Legend -->
+                        <div class="flex justify-between text-[10px] font-black uppercase tracking-tighter">
+                            <div class="flex items-center gap-2">
+                                <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                                <span class="text-green-400">{{ stat.good_pct }}% Got It</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                                <span class="text-amber-400">{{ stat.mixed_pct }}% Mixed</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span class="text-red-400">{{ stat.struggled_pct }}% Struggled</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-span-full py-10 text-center bg-white/5 border border-dashed border-white/10 rounded-3xl">
+                    <p class="text-xs text-gray-600 font-bold uppercase italic">No response data available to generate trends</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <!-- HIGHER CLASS TIER -->
+    <div id="panel-higher" class="hidden space-y-12">
+        <section>
+            <div class="flex justify-between items-end mb-6">
+                <h2 class="text-xl font-extrabold text-white">Your Classes</h2>
+                <button class="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-[10px] font-black uppercase text-white tracking-widest transition-all">+ New Class</button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for cls in higher_classes %}
+                <div class="bg-white/5 border border-white/10 rounded-3xl p-8 hover:border-indigo-500/50 transition-all group">
+                    <h3 class="text-2xl font-black text-white mb-2">{{ cls.name }}</h3>
+                    <p class="text-indigo-400 text-xs font-bold uppercase tracking-widest mb-6">{{ cls.grade }}</p>
+                    
+                    <div class="flex gap-4 mb-8">
+                        <div class="flex-1 p-3 bg-white/5 rounded-2xl border border-white/5">
+                            <p class="text-[8px] text-gray-500 uppercase font-black tracking-widest">Students</p>
+                            <p class="text-lg font-black text-white">{{ cls.students.count }}</p>
+                        </div>
+                        <div class="flex-1 p-3 bg-white/5 rounded-2xl border border-white/5">
+                            <p class="text-[8px] text-gray-500 uppercase font-black tracking-widest">Materials</p>
+                            <p class="text-lg font-black text-white">{{ cls.materials.count }}</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <a href="#" class="block w-full py-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl text-center text-xs font-bold uppercase tracking-wider transition-all">Manage Students</a>
+                        <a href="#" class="block w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-center text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20">Class Dashboard</a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-span-full py-20 text-center opacity-30">
+                    <p class="text-lg font-bold uppercase italic tracking-[0.2em]">No classes managed yet</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Rapid Actions -->
+        <section class="max-w-4xl">
+            <h2 class="text-xl font-extrabold text-white mb-6">Rapid Actions</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <a href="#" class="p-6 bg-gradient-to-br from-indigo-500/10 to-blue-500/10 border border-indigo-500/20 rounded-3xl hover:border-indigo-500/40 transition-all group">
+                    <h4 class="text-white font-black uppercase text-sm mb-2 group-hover:text-indigo-400 transition-colors">AI Quiz Generator</h4>
+                    <p class="text-gray-400 text-xs leading-relaxed">Instantly generate high-quality MCQs from your uploaded PDF or text materials using Ollama.</p>
+                </a>
+                <a href="#" class="p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-3xl hover:border-purple-500/40 transition-all group">
+                    <h4 class="text-white font-black uppercase text-sm mb-2 group-hover:text-purple-400 transition-colors">Performance Analytics</h4>
+                    <p class="text-gray-400 text-xs leading-relaxed">Visualize topic mastery across all your classes via the Heatmap Engine.</p>
+                </a>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script>
+    function switchTab(tier) {
+        const btnLower = document.getElementById('tab-lower');
+        const btnHigher = document.getElementById('tab-higher');
+        const panelLower = document.getElementById('panel-lower');
+        const panelHigher = document.getElementById('panel-higher');
+
+        if (tier === 'lower') {
+            btnLower.className = "border-cyan-500 text-white border-b-2 py-4 px-1 text-sm font-bold uppercase tracking-widest transition-all";
+            btnHigher.className = "border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-300 border-b-2 py-4 px-1 text-sm font-bold uppercase tracking-widest transition-all";
+            panelLower.classList.remove('hidden');
+            panelHigher.classList.add('hidden');
+        } else {
+            btnHigher.className = "border-indigo-500 text-white border-b-2 py-4 px-1 text-sm font-bold uppercase tracking-widest transition-all";
+            btnLower.className = "border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-300 border-b-2 py-4 px-1 text-sm font-bold uppercase tracking-widest transition-all";
+            panelHigher.classList.remove('hidden');
+            panelLower.classList.add('hidden');
+        }
+    }
+
+    // Apply mastery bar widths after load to avoid IDE CSS parser errors
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.js-mastery-bar').forEach(bar => {
+            const pct = bar.getAttribute('data-pct');
+            bar.style.width = pct + '%';
+        });
+    });
+</script>
+{% endblock %}

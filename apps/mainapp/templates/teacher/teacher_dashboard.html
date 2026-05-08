@@ -1,0 +1,269 @@
+{% extends 'teacher/teacher_base.html' %}
+{% load static %}
+
+{% block title %}Teacher Console | EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}Hello, {{ profile.user.first_name|default:user.username }}{% endblock %}
+{% block page_subtitle %}Overseeing {{ total_students }} students and {{ managed_classes|length }} advanced academic streams.{% endblock %}
+
+{% block teacher_extra_css %}
+<!-- Include Chart.js and ApexCharts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<style>
+    /* Dashboard Specific Overrides */
+    .stat-bento {
+        padding: 30px;
+        justify-content: center;
+        text-align: center;
+    }
+    .stat-bento .value-p {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 5px;
+        background: linear-gradient(135deg, #1e293b, var(--accent-gold));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .stat-bento .label-p {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: 700;
+        color: var(--text-muted);
+    }
+    .stat-bento .icon-p {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 1.2rem;
+        opacity: 0.1;
+        color: var(--accent-gold);
+    }
+
+    /* Analytics Overrides */
+    .trend-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+    .trend-title {
+        font-family: 'Tenor Sans', serif;
+        font-size: 1.1rem;
+        margin: 0;
+    }
+    .trend-badge {
+        background: rgba(179, 139, 77, 0.1);
+        color: var(--accent-gold);
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 0.65rem;
+        font-weight: 700;
+    }
+
+    /* Insights List */
+    .insights-list {
+        list-style: none;
+        padding: 0;
+        margin-top: 15px;
+    }
+    .insights-list li {
+        display: flex;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        background: rgba(0,0,0,0.02);
+        font-size: 0.85rem;
+        border: 1px solid transparent;
+    }
+</style>
+{% endblock %}
+
+{% block teacher_content %}
+<div class="admin-wrapper-p">
+    {% if dashboard_mode == "basic" %}
+        {% include "teacher/basic_dashboard.html" %}
+    {% else %}
+        {% include "teacher/advanced_dashboard.html" %}
+    {% endif %}
+</div>
+
+<!-- Safe JSON data passing -->
+{{ class_names_json|json_script:"classNamesData" }}
+{{ class_sizes_json|json_script:"classSizesData" }}
+{{ score_labels_json|json_script:"scoreLabelsData" }}
+{{ score_data_json|json_script:"scoreDataValues" }}
+{{ trend_labels_json|json_script:"trendLabelsData" }}
+{{ trend_values_json|json_script:"trendValuesData" }}
+
+<!-- Lower Class Data -->
+{{ lower_pie_labels_json|json_script:"lowerPieLabels" }}
+{{ lower_pie_data_json|json_script:"lowerPieValues" }}
+{{ lower_session_labels_json|json_script:"lowerSessionLabels" }}
+{{ lower_session_stars_json|json_script:"lowerSessionStars" }}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        Chart.defaults.color = '#888';
+        Chart.defaults.font.family = "'Inter', sans-serif";
+
+        const classNames = JSON.parse(document.getElementById('classNamesData').textContent);
+        const classSizes = JSON.parse(document.getElementById('classSizesData').textContent);
+        const scoreLabels = JSON.parse(document.getElementById('scoreLabelsData').textContent);
+        const scoreData = JSON.parse(document.getElementById('scoreDataValues').textContent);
+        const trendLabels = JSON.parse(document.getElementById('trendLabelsData').textContent);
+        const trendValues = JSON.parse(document.getElementById('trendValuesData').textContent);
+
+        // 1. Class Distribution
+        if (document.getElementById('classChart') && classNames.length > 0) {
+            const ctxClass = document.getElementById('classChart').getContext('2d');
+            new Chart(ctxClass, {
+                type: 'bar',
+                data: {
+                    labels: classNames,
+                    datasets: [{
+                        label: 'Students',
+                        data: classSizes,
+                        backgroundColor: '#b38b4d',
+                        borderRadius: 8,
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        // 2. Engagement Trend
+        if (document.getElementById('engagementTrendChart')) {
+            const ctxTrend = document.getElementById('engagementTrendChart').getContext('2d');
+            new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: trendLabels,
+                    datasets: [{
+                        label: 'Quiz Attempts',
+                        data: trendValues,
+                        borderColor: '#b38b4d',
+                        fill: true,
+                        backgroundColor: 'rgba(179, 139, 77, 0.05)',
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        // 3. Score Radar/Polar
+        if (document.getElementById('scoreChart') && scoreLabels.length > 0) {
+            const ctxScore = document.getElementById('scoreChart').getContext('2d');
+            new Chart(ctxScore, {
+                type: 'polarArea',
+                data: {
+                    labels: scoreLabels,
+                    datasets: [{
+                        data: scoreData,
+                        backgroundColor: ['#b38b4d', '#2d6a4f', '#1e293b', '#64748b']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        // --- LOWER CLASS CHARTS (Chart.js) ---
+        
+        // 4. Performance Distribution (Doughnut)
+        if (document.getElementById('lowerPieChart')) {
+            const pieLabels = JSON.parse(document.getElementById('lowerPieLabels').textContent);
+            const pieValues = JSON.parse(document.getElementById('lowerPieValues').textContent);
+            
+            if (pieValues.length > 0) {
+                const ctxPie = document.getElementById('lowerPieChart').getContext('2d');
+                new Chart(ctxPie, {
+                    type: 'doughnut',
+                    data: {
+                        labels: pieLabels,
+                        datasets: [{
+                            data: pieValues,
+                            backgroundColor: ['#2d6a4f', '#fbbf24', '#ef4444'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            } else {
+                const container = document.getElementById('lowerPieChart').parentElement;
+                container.innerHTML = '<div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted small italic" style="min-height: 300px;"><i class="fa-solid fa-chart-pie mb-2" style="font-size: 2rem; opacity: 0.2;"></i> No evaluation data yet</div>';
+            }
+        }
+
+        // 5. Session Mastery Trend (Line)
+        if (document.getElementById('lowerTrendChart')) {
+            const sessionLabels = JSON.parse(document.getElementById('lowerSessionLabels').textContent);
+            const sessionStars = JSON.parse(document.getElementById('lowerSessionStars').textContent);
+            
+            if (sessionStars.length > 0) {
+                const ctxTrend = document.getElementById('lowerTrendChart').getContext('2d');
+                new Chart(ctxTrend, {
+                    type: 'line',
+                    data: {
+                        labels: sessionLabels,
+                        datasets: [{
+                            label: 'Stars Earned',
+                            data: sessionStars,
+                            borderColor: '#b38b4d',
+                            backgroundColor: 'rgba(179, 139, 77, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#b38b4d'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                min: 0,
+                                max: 5,
+                                ticks: { stepSize: 1 }
+                            }
+                        }
+                    }
+                });
+            } else {
+                const container = document.getElementById('lowerTrendChart').parentElement;
+                container.innerHTML = '<div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted small italic" style="min-height: 300px;"><i class="fa-solid fa-chart-line mb-2" style="font-size: 2rem; opacity: 0.2;"></i> No session history yet</div>';
+            }
+        }
+
+        // AI Engine Status Check
+        function checkEngine() {
+            fetch('{% url "check_model_status" %}')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('engineStatusPill');
+                    if (!container) return;
+                    if (data.loaded) {
+                        container.innerHTML = `<div class="status-pill-p status-ready" style="font-size: 0.55rem; padding: 3px 8px;"><span class="pulse-p" style="width: 6px; height: 6px;"></span> Gemma 2B Ready</div>`;
+                    } else {
+                        container.innerHTML = `<div class="status-pill-p status-error" style="font-size: 0.55rem; padding: 3px 8px;">Offline</div>`;
+                    }
+                })
+                .catch(() => {
+                    const container = document.getElementById('engineStatusPill');
+                    if (container) container.innerHTML = `<div class="status-pill-p status-error" style="font-size: 0.55rem; padding: 3px 8px;">Link Error</div>`;
+                });
+        }
+        checkEngine();
+        setInterval(checkEngine, 30000); // Check every 30s
+    });
+</script>
+{% endblock %}

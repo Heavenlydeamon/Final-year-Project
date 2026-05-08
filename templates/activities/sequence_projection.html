@@ -1,0 +1,96 @@
+<style>
+    .sequence-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 2rem;
+        width: 100%;
+        padding: 2rem;
+        flex-wrap: wrap;
+    }
+    .sequence-item {
+        background: var(--glass);
+        border: 2px solid var(--glass-border);
+        padding: 2rem;
+        border-radius: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        width: 250px;
+        position: relative;
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .sequence-item img {
+        width: 180px;
+        height: 140px;
+        object-fit: cover;
+        border-radius: 1rem;
+    }
+    .sequence-label {
+        font-size: 24px;
+        font-weight: 700;
+        text-align: center;
+    }
+    .sequence-number {
+        position: absolute;
+        top: -1.5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--accent-blue);
+        color: white;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 900;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .sequence-item.revealed {
+        border-color: var(--accent-green);
+        background: rgba(16, 185, 129, 0.1);
+    }
+    .sequence-item.revealed .sequence-number {
+        opacity: 1;
+    }
+</style>
+
+<div class="sequence-container" id="sequence-zone">
+    {% for item in activity.items.items %}
+    <div class="sequence-item" id="seq-{{ item.id }}">
+        <div class="sequence-number"></div>
+        {% if item.image %}
+        <img src="{{ item.image }}" alt="{{ item.label }}">
+        {% endif %}
+        <span class="sequence-label">{{ item.label }}</span>
+    </div>
+    {% endfor %}
+</div>
+
+{{ activity.answer|json_script:"sequence-answers" }}
+<script>
+function revealSequence() {
+    const correctOrder = JSON.parse(document.getElementById('sequence-answers').textContent);
+    // correctOrder is ["step1", "step2", "step3"]
+    
+    const zone = document.getElementById('sequence-zone');
+    
+    correctOrder.forEach((id, index) => {
+        const el = document.getElementById(`seq-${id}`);
+        if (el) {
+            setTimeout(() => {
+                el.classList.add('revealed');
+                el.querySelector('.sequence-number').innerText = index + 1;
+                // Visually move them to show correct order if needed, 
+                // but just highlighting in place is often enough for projection.
+                // zone.appendChild(el); 
+            }, index * 400);
+        }
+    });
+}
+</script>

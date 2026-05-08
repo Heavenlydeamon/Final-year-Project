@@ -1,0 +1,693 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    :root {
+        --player-accent: #6366f1;
+        --opp-accent: #f43f5e;
+        --glass: rgba(15, 23, 42, 0.8);
+    }
+
+    body {
+        background: radial-gradient(circle at top right, #1e1b4b, #0f172a);
+        min-height: 100vh;
+        color: white;
+    }
+
+    .arena-container {
+        display: grid;
+        grid-template-columns: 1fr 350px;
+        gap: 30px;
+        max-width: 1400px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    /* --- Quiz Area --- */
+    .quiz-card {
+        background: var(--glass);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        padding: 60px;
+        backdrop-filter: blur(10px);
+        position: relative;
+        min-height: 600px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .question-text {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 40px;
+        line-height: 1.2;
+    }
+
+    .choices-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .choice-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 16px;
+        text-align: left;
+        font-size: 1.1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .choice-btn:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateX(10px);
+    }
+
+    .choice-btn.correct {
+        background: #10b981 !important;
+        border-color: #10b981;
+    }
+
+    .choice-btn.wrong {
+        background: #ef4444 !important;
+        border-color: #ef4444;
+    }
+
+    /* --- Sidebar / Leaderboard --- */
+    .arena-sidebar {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 24px;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .competitor-box {
+        padding: 20px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .competitor-box.active-player {
+        border-left: 4px solid var(--player-accent);
+    }
+
+    .competitor-box.active-opponent {
+        border-left: 4px solid var(--opp-accent);
+    }
+
+    .progress-track {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        margin-top: 15px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        width: 0%;
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .player-fill {
+        background: var(--player-accent);
+        box-shadow: 0 0 15px var(--player-accent);
+    }
+
+    .opp-fill {
+        background: var(--opp-accent);
+        box-shadow: 0 0 15px var(--opp-accent);
+    }
+
+    .score-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        margin-top: 5px;
+    }
+
+    /* --- UI Shimmer / Effects --- */
+    .vs-badge {
+        position: absolute;
+        top: 30px;
+        left: 30px;
+        background: linear-gradient(90deg, #6366f1, #a855f7);
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+
+    .timer-ring {
+        position: absolute;
+        top: 30px;
+        right: 30px;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--player-accent);
+    }
+
+    .status-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.95);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        text-align: center;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+</style>
+
+<!-- Start Countdown Overlay -->
+<div id="startOverlay" class="status-overlay">
+    <div class="text-secondary mb-2" style="letter-spacing: 4px;">GET READY</div>
+    <div id="countdown" style="font-size: 8rem; font-weight: 900; background: linear-gradient(to bottom, #fff, #6366f1); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">3</div>
+</div>
+
+<!-- Results Overlay -->
+<div id="resultOverlay" class="status-overlay hidden">
+    <h1 id="resultTitle" style="font-size: 5rem; margin-bottom: 20px;">VICTORY!</h1>
+    <p id="resultMsg" class="mb-5" style="font-size: 1.5rem; opacity: 0.8;"></p>
+    <div class="d-flex gap-3">
+        <a href="{% url 'challenge_mode' %}" class="btn btn-lg btn-outline-light px-5"
+            style="border-radius: 30px;">Challenge Menu</a>
+        <a href="{% url 'leaderboard' %}" class="btn btn-lg btn-primary px-5"
+            style="border-radius: 30px; background: var(--player-accent);">View Leaderboard</a>
+    </div>
+</div>
+
+<div class="container-fluid py-4">
+    <div class="arena-container">
+        <!-- Left: Question Area -->
+        <div class="quiz-card">
+            <div class="vs-badge">RACE MODE</div>
+            <div id="timer" class="timer-ring">20s</div>
+
+            <div id="questionContainer">
+                {% for q in arena_questions %}
+                <div class="q-wrap {% if not forloop.first %}hidden{% endif %}" id="arena-q-{{ forloop.index0 }}"
+                    data-order="{{ forloop.index0 }}">
+                    <div class="text-secondary mb-3">QUESTION {{ forloop.counter }} of {{ arena_questions|length }}</div>
+                    <h2 class="question-text">{{ q.question_text }}</h2>
+
+                    <div class="choices-grid">
+                        <button class="choice-btn" data-choice="A"
+                            onclick="checkAnswer(this, 'A', '{{ q.correct_option }}')">{{ q.option_a }}</button>
+                        <button class="choice-btn" data-choice="B"
+                            onclick="checkAnswer(this, 'B', '{{ q.correct_option }}')">{{ q.option_b }}</button>
+                        <button class="choice-btn" data-choice="C"
+                            onclick="checkAnswer(this, 'C', '{{ q.correct_option }}')">{{ q.option_c }}</button>
+                        <button class="choice-btn" data-choice="D"
+                            onclick="checkAnswer(this, 'D', '{{ q.correct_option }}')">{{ q.option_d }}</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Right: Competition Progress (Floating Widget Style) -->
+        <div class="arena-sidebar-floating">
+            <div class="sidebar-header">
+                <div class="live-pulse"></div>
+                <h4 class="sidebar-title">LIVE ARENA</h4>
+            </div>
+
+            <!-- Player -->
+            <div class="competitor-card active-player" id="playerCard">
+                <div class="competitor-info">
+                    <div class="avatar-box">
+                        <img src="{% static 'images/pixel_character.png' %}" class="pixel-avatar" alt="You">
+                        <div class="badge-mini">YOU</div>
+                    </div>
+                    <div class="score-container">
+                        <div id="playerScoreDisplay" class="score-value-premium">0</div>
+                        <div class="score-label">POINTS</div>
+                    </div>
+                </div>
+                <div class="progress-track-premium">
+                    <div id="playerProgress" class="progress-fill-premium player-fill"></div>
+                </div>
+            </div>
+
+            <div class="vs-divider">
+                <div class="vs-line"></div>
+                <div class="vs-circle">VS</div>
+                <div class="vs-line"></div>
+            </div>
+
+            <!-- Opponent -->
+            <div class="competitor-card active-opponent" id="oppCard">
+                <div class="competitor-info">
+                    <div class="avatar-box">
+                        <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed={{ opponent_name }}" class="pixel-avatar" alt="Opponent">
+                        <div class="badge-mini opp">OPP</div>
+                    </div>
+                    <div class="score-container">
+                        <div id="oppScoreDisplay" class="score-value-premium">0</div>
+                        <div class="score-label">POINTS</div>
+                    </div>
+                </div>
+                <div class="progress-track-premium">
+                    <div id="oppProgress" class="progress-fill-premium opp-fill"></div>
+                </div>
+                <div class="competitor-name">{{ opponent_name }}</div>
+            </div>
+
+            <div class="arena-footer-stats">
+                <div class="match-meta">
+                    <i class="fa-solid fa-trophy text-warning"></i>
+                    <span>MATCH WIN: +5 XP</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .arena-sidebar-floating {
+        background: rgba(15, 23, 42, 0.7);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 32px;
+        padding: 24px;
+        position: sticky;
+        top: 40px;
+        height: fit-content;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .sidebar-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+        padding-left: 8px;
+    }
+
+    .sidebar-title {
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.5);
+        margin: 0;
+    }
+
+    .live-pulse {
+        width: 8px;
+        height: 8px;
+        background: #ef4444;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #ef4444;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.5); opacity: 0.5; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    .competitor-card {
+        padding: 20px;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .competitor-card.active-player { border-left: 4px solid var(--player-accent); }
+    .competitor-card.active-opponent { border-left: 4px solid var(--opp-accent); }
+
+    .competitor-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .avatar-box {
+        position: relative;
+        width: 64px;
+        height: 64px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 16px;
+        padding: 8px;
+    }
+
+    .pixel-avatar {
+        width: 100%;
+        height: 100%;
+        image-rendering: pixelated;
+    }
+
+    .badge-mini {
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--player-accent);
+        font-size: 0.6rem;
+        font-weight: 900;
+        padding: 2px 8px;
+        border-radius: 10px;
+        white-space: nowrap;
+    }
+    .badge-mini.opp { background: var(--opp-accent); }
+
+    .score-container { text-align: right; }
+    .score-value-premium {
+        font-size: 2.5rem;
+        font-weight: 900;
+        line-height: 1;
+        background: linear-gradient(to bottom, #fff, rgba(255,255,255,0.5));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .score-label {
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: rgba(255,255,255,0.3);
+        letter-spacing: 1px;
+    }
+
+    .progress-track-premium {
+        height: 8px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-fill-premium {
+        height: 100%;
+        width: 0%;
+        transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .vs-divider {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin: 15px 0;
+        opacity: 0.2;
+    }
+    .vs-line { flex: 1; height: 1px; background: white; }
+    .vs-circle { font-weight: 900; font-size: 0.9rem; }
+
+    .competitor-name {
+        margin-top: 12px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.6);
+        text-align: center;
+    }
+
+    .arena-footer-stats {
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .match-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: rgba(255,255,255,0.4);
+    }
+
+    /* Score Pop Animation */
+    .score-pop { animation: scorePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    @keyframes scorePop {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.4); color: #fbbf24; }
+        100% { transform: scale(1); }
+    }
+</style>
+
+<script>
+    let currentIdx = 0;
+    // Use the explicit count passed from the view
+    const totalQuestions = parseInt("{{ arena_question_count|default:0 }}");
+    let playerScore = 0;
+    let oppScore = 0;
+    let timerInterval;
+    let timeLeft = 20;
+    let gameStarted = false;
+
+    console.log(`Arena Initialized. Questions: ${totalQuestions}.`);
+    for (let i = 0; i < totalQuestions; i++) {
+        if (!document.getElementById(`arena-q-${i}`)) {
+            console.warn(`CRITICAL: Question element arena-q-${i} is MISSING from DOM!`);
+        }
+    }
+    if (totalQuestions === 0) {
+        console.error("CRITICAL: No questions found for this quiz.");
+    }
+
+    // Ghost Settings
+    const isGhost = ("{{ session.is_ghost|yesno:'true,false' }}" === "true");
+    const ghostAccuracy = parseFloat("{{ ghost_accuracy|default:0.75 }}");
+
+    function startCountdown() {
+        console.log(`[DEBUG] Arena Initialized. Mode: ${isGhost ? 'Ghost' : 'PvP'}. Total Questions: ${totalQuestions}. Accuracy: ${ghostAccuracy}`);
+        let count = 3;
+        const countEl = document.getElementById('countdown');
+        if (!countEl) { startGame(); return; }
+
+        const interval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                countEl.innerText = count;
+            } else if (count === 0) {
+                countEl.innerText = "GO!";
+            } else {
+                clearInterval(interval);
+                const overlay = document.getElementById('startOverlay');
+                if (overlay) overlay.classList.add('hidden');
+                startGame();
+            }
+        }, 1000);
+    }
+
+    function startGame() {
+        gameStarted = true;
+        if (totalQuestions > 0) {
+            startTimer();
+            if (isGhost) startGhostAI();
+        } else {
+            endGame();
+        }
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        timeLeft = 20;
+        updateTimerDisplay();
+
+        timerInterval = setInterval(() => {
+            if (!gameStarted) {
+                clearInterval(timerInterval);
+                return;
+            }
+
+            timeLeft--;
+            if (timeLeft <= 0) {
+                timeLeft = 0;
+                clearInterval(timerInterval);
+                updateTimerDisplay();
+                handleTimeout();
+            } else {
+                updateTimerDisplay();
+            }
+        }, 1000);
+    }
+    
+    function updateTimerDisplay() {
+        const timerEl = document.getElementById('timer');
+        if (!timerEl) return;
+        timerEl.innerText = timeLeft + 's';
+        if (timeLeft <= 5) timerEl.style.color = '#ef4444';
+        else timerEl.style.color = 'var(--player-accent)';
+    }
+
+    function checkAnswer(btn, choice, correct) {
+        if (!gameStarted || isGameOver) return;
+        
+        clearInterval(timerInterval);
+        
+        const wrap = btn.closest('.q-wrap');
+        const buttons = wrap.querySelectorAll('.choice-btn');
+        buttons.forEach(b => b.disabled = true);
+
+        if (choice === correct) {
+            btn.classList.add('correct');
+            playerScore++;
+            // Trigger animation
+            const scoreEl = document.getElementById('playerScoreDisplay');
+            if (scoreEl) {
+                scoreEl.classList.remove('score-pop');
+                void scoreEl.offsetWidth; // trigger reflow
+                scoreEl.classList.add('score-pop');
+            }
+        } else {
+            btn.classList.add('wrong');
+            buttons.forEach(b => {
+                if (b.getAttribute('data-choice') === correct) { 
+                    b.classList.add('correct'); 
+                }
+            });
+        }
+
+        setTimeout(() => {
+            nextQuestion();
+        }, 800);
+    }
+
+    function handleTimeout() {
+        clearInterval(timerInterval);
+        nextQuestion();
+    }
+
+    let isTransitioning = false;
+    let isGameOver = false;
+
+    function nextQuestion() {
+        if (!gameStarted || isGameOver || isTransitioning) return;
+        isTransitioning = true;
+
+        const allQs = document.querySelectorAll('.q-wrap');
+        // Hide all questions first
+        allQs.forEach(q => q.classList.add('hidden'));
+
+        currentIdx++;
+        console.log(`[DEBUG] Moving to index ${currentIdx} of ${allQs.length}`);
+
+        if (currentIdx < allQs.length) {
+            const nextQ = allQs[currentIdx];
+            if (nextQ) {
+                nextQ.classList.remove('hidden');
+                startTimer();
+                setTimeout(() => { isTransitioning = false; }, 400);
+            } else {
+                endGame();
+            }
+        } else {
+            endGame();
+        }
+        updateUI();
+    }
+
+    function updateUI() {
+        const pScoreEl = document.getElementById('playerScoreDisplay');
+        const pProgEl = document.getElementById('playerProgress');
+        const total = document.querySelectorAll('.q-wrap').length;
+        if (pScoreEl) pScoreEl.innerText = playerScore;
+        if (pProgEl && total > 0) {
+            pProgEl.style.width = Math.min(100, (currentIdx / total * 100)) + '%';
+        }
+        document.getElementById('playerCard')?.classList.add('active-player');
+        document.getElementById('oppCard')?.classList.remove('active-opponent');
+    }
+
+    function startGhostAI() {
+        let oppIdx = 0;
+
+        function ghostMove() {
+            if (!gameStarted || isGameOver || oppIdx >= totalQuestions) return;
+
+            // Bot "thinks" for 3-7 seconds
+            const delay = 3000 + (Math.random() * 4000);
+
+            setTimeout(() => {
+                if (!gameStarted || isGameOver) return;
+
+                const isCorrect = Math.random() < ghostAccuracy;
+                if (isCorrect) {
+                    oppScore++;
+                    const scoreEl = document.getElementById('oppScoreDisplay');
+                    if (scoreEl) {
+                        scoreEl.classList.remove('score-pop');
+                        void scoreEl.offsetWidth; 
+                        scoreEl.classList.add('score-pop');
+                    }
+                }
+                oppIdx++;
+
+                const oScoreEl = document.getElementById('oppScoreDisplay');
+                const oProgEl = document.getElementById('oppProgress');
+                if (oScoreEl) oScoreEl.innerText = oppScore;
+                if (oProgEl) oProgEl.style.width = Math.min(100, (oppIdx / totalQuestions * 100)) + '%';
+                document.getElementById('playerCard')?.classList.remove('active-player');
+                document.getElementById('oppCard')?.classList.add('active-opponent');
+
+                if (oppIdx < totalQuestions) {
+                    ghostMove(); // Recursive call for next question
+                }
+            }, delay);
+        }
+
+        ghostMove();
+    }
+
+    function endGame() {
+        if (isGameOver) return;
+        isGameOver = true;
+        gameStarted = false;
+        clearInterval(timerInterval);
+
+        const overlay = document.getElementById('resultOverlay');
+        const title = document.getElementById('resultTitle');
+        const msg = document.getElementById('resultMsg');
+        if (!overlay) return;
+
+        overlay.classList.remove('hidden');
+
+        if (playerScore > oppScore) {
+            title.innerText = "VICTORY!";
+            title.style.color = "#10b981";
+            msg.innerText = `You defeated your opponent ${playerScore} to ${oppScore}. +5 Points awarded!`;
+        } else if (playerScore < oppScore) {
+            title.innerText = "DEFEAT";
+            title.style.color = "#ef4444";
+            msg.innerText = `Better luck next time! You gained 1 point for the challenge.`;
+        } else {
+            title.innerText = "IT'S A DRAW";
+            title.style.color = "var(--accent-amber)";
+            msg.innerText = "Both competitors were equally matched! 3 points awarded.";
+        }
+
+        const completionUrl = "{% url 'complete_challenge_session' session.id %}";
+        const userId = "{{ request.user.id }}";
+        const csrfToken = "{{ csrf_token }}";
+
+        fetch(completionUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `winner_id=${playerScore >= oppScore ? userId : 'opponent'}`
+        });
+    }
+
+    window.onload = startCountdown;
+</script>
+{% endblock %}

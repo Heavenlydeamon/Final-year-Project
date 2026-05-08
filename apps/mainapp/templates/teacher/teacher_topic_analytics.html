@@ -1,0 +1,147 @@
+{% extends 'teacher/teacher_base.html' %}
+
+{% block title %}Topic Analytics: {{ topic.name }} - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}{{ topic.name }} Analytics{% endblock %}
+{% block page_subtitle %}Comprehensive performance matrix for {{ class_obj.name }}.{% endblock %}
+
+{% block teacher_extra_css %}
+<style>
+    .analytics-hero-p {
+        background: linear-gradient(135deg, var(--sidebar-bg), #1e293b);
+        color: white;
+        border-radius: 24px;
+        padding: 40px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    .topic-pill-p {
+        background: rgba(179, 139, 77, 0.2);
+        color: var(--accent-gold);
+        border: 1px solid var(--accent-gold);
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+        display: inline-block;
+    }
+    .score-cell-p {
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: var(--text-main);
+    }
+    .score-sub-p {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        display: block;
+    }
+    .mastery-status-p {
+        padding: 6px 15px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .status-completed-p { background: #dcfce7; color: #166534; }
+    .status-progress-p { background: #fef9c3; color: #854d0e; }
+    .status-none-p { background: #f1f5f9; color: #64748b; }
+</style>
+{% endblock %}
+
+{% block teacher_content %}
+<div class="topic-analytics-wrapper">
+    <!-- Hero Stats -->
+    <div class="analytics-hero-p">
+        <div class="topic-pill-p">{{ topic.section.name }}</div>
+        <h2 class="fw-bold mb-1">{{ topic.name }}</h2>
+        <p class="text-white-50 mb-4">Tracking evaluations, quiz attempts, and student mastery status.</p>
+        
+        <div class="d-flex gap-5">
+            <div>
+                <div class="text-white-50 small mb-1">Target Class</div>
+                <div class="fw-bold h5 mb-0">{{ class_obj.name }}</div>
+            </div>
+            <div>
+                <div class="text-white-50 small mb-1">Total Students</div>
+                <div class="fw-bold h5 mb-0">{{ student_data|length }}</div>
+            </div>
+            <div class="ms-auto">
+                <a href="{% url 'teacher_publish_valuation' class_obj.id topic.id %}" class="btn btn-gold-p btn-p-pill px-4" onclick="return confirm('Finalize and publish marks to all students? This will make them visible on leaderboards.')">
+                    <i class="fa-solid fa-upload me-2"></i> Publish Valuation
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Table -->
+    <div class="bento-card-p p-0 overflow-hidden">
+        <table class="table-v2 m-0">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Mastery Status</th>
+                    <th>Quiz Score</th>
+                    <th>Best Challenge</th>
+                    <th>Valuation</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in student_data %}
+                <tr>
+                    <td>
+                        <div class="fw-bold">{{ item.profile.user.username }}</div>
+                        <div class="text-muted extra-small">Level {{ item.profile.level }} • {{ item.profile.xp }} XP</div>
+                    </td>
+                    <td>
+                        {% if item.progress %}
+                            <span class="mastery-status-p {% if item.progress.status == 'completed' %}status-completed-p{% else %}status-progress-p{% endif %}">
+                                {{ item.progress.get_status_display }}
+                            </span>
+                        {% else %}
+                            <span class="mastery-status-p status-none-p">Not Started</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.latest_quiz %}
+                            <div class="score-cell-p text-gold-p">{{ item.latest_quiz.score }}<span class="score-sub-p">/ {{ item.latest_quiz.total_questions }}</span></div>
+                            <div class="extra-small text-muted">{{ item.latest_quiz.date_attempted|date:"M d" }}</div>
+                        {% else %}
+                            <span class="text-muted small">--</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.best_challenge %}
+                            <div class="score-cell-p text-primary">{{ item.best_challenge.score }}<span class="score-sub-p">XP</span></div>
+                            <div class="extra-small text-muted">{{ item.best_challenge.challenge_type|replace:"_, "|title }}</div>
+                        {% else %}
+                            <span class="text-muted small">--</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="score-cell-p text-primary">{{ item.composite_marks|floatformat:1 }}<span class="score-sub-p">/ 100</span></div>
+                        <div class="extra-small {% if item.progress.valuation_status == 'published' %}text-success fw-bold{% else %}text-warning{% endif %}">
+                            {{ item.progress.get_valuation_status_display|default:"No Data" }}
+                        </div>
+                        <div class="extra-small text-muted">Topic Rank: #{{ item.topic_rank }}</div>
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'teacher_view_student_performance_class' class_obj.id item.profile.user.id %}" class="btn btn-sm btn-outline-dark rounded-pill px-3">Student Profile</a>
+                        <a href="{% url 'teacher_class_topic_leaderboard' class_obj.id topic.id %}" class="btn btn-sm btn-gold-p rounded-pill px-3 ms-1">Class Leaderboard</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-5 text-center">
+        <a href="{% url 'teacher_class_detail' class_obj.id %}" class="text-gold-p fw-bold text-decoration-none">
+            <i class="fa-solid fa-arrow-left me-2"></i> Back to {{ class_obj.name }}
+        </a>
+    </div>
+</div>
+{% endblock %}

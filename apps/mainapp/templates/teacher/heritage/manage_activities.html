@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Activities - Teacher Lab{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --heritage-cream: #f8f6f0;
+        --sidebar-dark: #121212;
+        --accent-gold: #b38b4d;
+        --accent-gold-glow: rgba(179, 139, 77, 0.4);
+    }
+    body { background-color: var(--heritage-cream) !important; font-family: 'Inter', sans-serif; }
+    .admin-wrapper { display: flex; min-height: 100vh; }
+    .admin-sidebar { width: 260px; background: var(--sidebar-dark); color: #fff; padding: 30px 15px; position: fixed; height: 100vh; z-index: 1000; }
+    .sidebar-brand { font-family: 'Tenor Sans', serif; font-size: 0.9rem; letter-spacing: 4px; color: var(--accent-gold); padding: 20px 15px; }
+    .nav-list { list-style: none; padding: 0; }
+    .nav-link-p { color: rgba(255, 255, 255, 0.5); text-decoration: none; padding: 12px 20px; display: flex; align-items: center; gap: 15px; border-radius: 12px; font-size: 0.9rem; transition: 0.3s; }
+    .nav-link-p.active { background: var(--accent-gold); color: #fff; }
+    .main-content { margin-left: 260px; padding: 40px 60px; flex: 1; }
+    .btn-gold { background: var(--accent-gold); color: #fff; border: none; border-radius: 50px; padding: 12px 30px; font-weight: 600; }
+    .activity-card { background: #fff; border-radius: 20px; padding: 25px; margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.02); box-shadow: 0 10px 30px rgba(0,0,0,0.02); }
+    .json-preview { background: #fdfaf5; padding: 10px; border-radius: 10px; font-family: monospace; font-size: 0.75rem; border: 1px solid #eee; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrapper">
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand">ECOHERITAGE</div>
+        <ul class="nav-list" style="margin-top: 30px;">
+            <li><a href="{% url 'teacher_dashboard' %}" class="nav-link-p"><i class="fa-solid fa-gauge-high"></i> <span>Dashboard</span></a></li>
+            <li><a href="{% url 'admin_manage_stories' %}" class="nav-link-p"><i class="fa-solid fa-book-open"></i> <span>My Stories</span></a></li>
+            <li><a href="{% url 'admin_manage_activities' %}" class="nav-link-p active"><i class="fa-solid fa-gamepad"></i> <span>My Activities</span></a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <header class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h1 style="font-family: 'Tenor Sans', serif; font-size: 2.2rem;">My Activities</h1>
+                <p class="text-muted">Build interactive challenges for your projection sessions.</p>
+            </div>
+            <button class="btn-gold" data-bs-toggle="modal" data-bs-target="#createActivityModal">
+                <i class="fa-solid fa-plus me-2"></i> Create Activity
+            </button>
+        </header>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-dark rounded-4 mb-4 border-0 shadow-sm">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="activity-list">
+            {% for activity in activities %}
+            <div class="activity-card">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <span class="badge bg-gold-p text-white rounded-pill px-3 py-2" style="font-size: 0.7rem;">{{ activity.get_question_type_display|upper }}</span>
+                        <div class="mt-2 text-muted small">{{ activity.topic.title }}</div>
+                    </div>
+                    <div class="col-md-5">
+                        <h5 class="fw-bold mb-1">{{ activity.question_text }}</h5>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button class="btn btn-sm btn-light rounded-pill px-4">Edit Details</button>
+                        <button class="btn btn-sm btn-outline-danger border-0 ms-2"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-5">
+                <p class="text-muted">You haven't created any interactive activities yet.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</div>
+
+<!-- Create Activity Modal -->
+<div class="modal fade" id="createActivityModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 p-4 pb-0">
+                <h5 class="modal-title fw-bold">New Interactive Activity</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Topic</label>
+                            <select name="topic" class="form-control rounded-3" required>
+                                {% for topic in topics %}
+                                <option value="{{ topic.id }}">{{ topic.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Type</label>
+                            <select name="question_type" class="form-control rounded-3" required>
+                                <option value="drag_drop">Drag and Drop</option>
+                                <option value="sequence">Sequence / Order</option>
+                                <option value="tap_match">Tap to Match</option>
+                                <option value="image_pick">Pick the Image</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Question Text</label>
+                            <input type="text" name="question_text" class="form-control rounded-3" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Configuration (JSON)</label>
+                            <textarea name="items_json" class="form-control rounded-3 font-monospace" rows="8" style="font-size: 0.8rem;">{
+  "draggables": [
+    {"id": "d1", "label": "Item 1", "image": "url"},
+    {"id": "d2", "label": "Item 2", "image": "url"}
+  ],
+  "containers": [
+    {"id": "c1", "label": "Target", "image": "url"}
+  ]
+}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Solution (JSON)</label>
+                            <textarea name="answer_json" class="form-control rounded-3 font-monospace" rows="8" style="font-size: 0.8rem;">{
+  "matches": [
+    {"draggableId": "d1", "containerId": "c1"}
+  ]
+}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="submit" class="btn-gold w-100">Create Activity</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

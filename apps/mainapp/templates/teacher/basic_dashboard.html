@@ -1,0 +1,260 @@
+<header class="console-header d-flex justify-content-between align-items-center">
+    <div>
+        <div class="d-flex align-items-center gap-3 mb-2">
+            <span class="badge" style="background: var(--accent-gold); color: #fff; border-radius: 8px; padding: 6px 12px; font-weight: 700; letter-spacing: 1px;">PRIMARY</span>
+            <span class="text-muted small fw-bold"><i class="fa-solid fa-calendar-day me-1"></i> {% now "F d, Y" %}</span>
+        </div>
+        <h1 class="console-title" style="font-weight: 800; font-size: 3rem; margin: 0;">Welcome back, {{ profile.user.first_name|default:user.username }}!</h1>
+        <p class="console-subtitle" style="font-size: 1.1rem; opacity: 0.8;">You're managing <strong>{{ total_students }}</strong> young scholars today across <strong>{{ managed_classes|length }}</strong> classes.</p>
+    </div>
+    <div class="user-status-pill d-none d-md-flex align-items-center gap-3" style="background: #fff; padding: 10px 25px; border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #eee;">
+        <div style="width: 10px; height: 10px; background: #4caf50; border-radius: 50%; box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);"></div>
+        <span class="fw-bold small">SYSTEM ONLINE</span>
+    </div>
+</header>
+
+<!-- --- Alert Panel --- -->
+<div class="alert-panel">
+    {% if not is_lower_class_teacher %}
+    {% if pending_join_requests > 0 %}
+    <div class="alert-box" style="border-left-color: #2d6a4f; background: rgba(45, 106, 79, 0.05);">
+        <i class="fa-solid fa-user-clock" style="color: #2d6a4f;"></i>
+        <span>🔔 You have {{ pending_join_requests }} pending join requests</span>
+        <a href="{% url 'teacher_view_join_requests' %}" class="btn-sm btn-outline-p ms-auto text-decoration-none" style="border-color: #2d6a4f; color: #2d6a4f !important;">View Requests</a>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+
+<!-- --- Simple Stats Matrix --- -->
+<div class="stats-row-p">
+    <div class="stat-tile-p">
+        <div class="stat-info-p">
+            <h4>My Classes</h4>
+            <div class="value-p">{{ managed_classes|length }}</div>
+        </div>
+        <div class="stat-icon-p"><i class="fa-solid fa-school"></i></div>
+    </div>
+    <div class="stat-tile-p">
+        <div class="stat-info-p">
+            <h4>Total Students</h4>
+            <div class="value-p">{{ total_students }}</div>
+        </div>
+        <div class="stat-icon-p"><i class="fa-solid fa-children"></i></div>
+    </div>
+    <div class="stat-tile-p">
+        <div class="stat-info-p">
+            <h4>Evaluations</h4>
+            <div class="value-p">{% if recent_attempts %}{{ recent_attempts|length }}{% else %}0{% endif %}</div>
+        </div>
+        <div class="stat-icon-p"><i class="fa-solid fa-award"></i></div>
+    </div>
+</div>
+
+<!-- --- Main Actions --- -->
+<div class="analytics-grid-p">
+    <div class="analytics-card-p">
+        <h3 class="card-label-p">Quick Actions</h3>
+        <div class="d-grid gap-3">
+            <a href="{% url 'teacher_manage_classes' %}" class="btn-p-pill btn-gold-p text-center">Manage My Students</a>
+            <a href="{% url 'admin_manage_activities' %}" class="btn-p-pill btn-outline-p text-center">Interactive Activity</a>
+            <a href="{% url 'admin_manage_stories' %}" class="btn-p-pill btn-outline-p text-center">Heritage Stories</a>
+            <a href="{% url 'lower_class_analytics' %}" class="btn-p-pill btn-light text-center">View Class Analytics</a>
+        </div>
+    </div>
+
+    <div class="analytics-card-p">
+        <h3 class="card-label-p">Latest Student Activity</h3>
+        <ul class="activity-list">
+            {% if recent_attempts %}
+            {% for attempt in recent_attempts %}
+            <li class="activity-item">
+                <div class="activity-user">
+                    <h5>
+                        {% if is_lower_class_teacher %}
+                            {{ attempt.student.name }}
+                        {% else %}
+                            {{ attempt.user_identifier }}
+                        {% endif %}
+                    </h5>
+                    <p>
+                        {% if is_lower_class_teacher %}
+                            {{ attempt.topic.title }}
+                        {% else %}
+                            {{ attempt.topic.name|default:attempt.section.name }}
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="activity-score">
+                    {% if is_lower_class_teacher %}
+                        <span class="badge {% if attempt.rating == 'good' %}bg-success{% elif attempt.rating == 'mixed' %}bg-warning{% else %}bg-danger{% endif %} text-uppercase" style="font-size: 0.6rem;">
+                            {{ attempt.rating }}
+                        </span>
+                    {% else %}
+                        {{ attempt.score }}/{{ attempt.total_questions }}
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+            {% else %}
+            <li class="activity-item"><p class="text-muted">No recent activity from your students.</p></li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+
+<!-- --- Lower Class Analytics Charts --- -->
+<div class="analytics-grid-p mt-4">
+    <div class="analytics-card-p">
+        <h3 class="card-label-p"><i class="fa-solid fa-chart-pie me-2"></i> Performance Distribution</h3>
+        <div style="min-height: 300px; position: relative;">
+            <canvas id="lowerPieChart"></canvas>
+        </div>
+        <p class="text-muted small mt-2">Breakdown of student performance across recent evaluations.</p>
+    </div>
+    <div class="analytics-card-p">
+        <h3 class="card-label-p"><i class="fa-solid fa-chart-line me-2"></i> Session Mastery Trend</h3>
+        <div style="min-height: 300px; position: relative;">
+            <canvas id="lowerTrendChart"></canvas>
+        </div>
+        <p class="text-muted small mt-2">Average stars earned in the last 8 heritage sessions.</p>
+    </div>
+</div>
+<!-- --- Unified Learning Session Launcher (Lower Class) --- -->
+{% if is_lower_class_teacher %}
+<div class="analytics-card-p mt-4" style="grid-column: span 2; border: 2px solid var(--accent-gold-glow);">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="card-label-p mb-1"><i class="fa-solid fa-rocket me-2"></i> Launch Learning Session</h3>
+            <p class="text-muted small">Select a class and a story to begin a cinematic projection session.</p>
+        </div>
+        <a href="{% url 'teacher_manage_classes' %}" class="btn-sm btn-outline-p text-decoration-none">+ Manage Classes</a>
+    </div>
+
+    <form id="launchSessionForm" class="row g-3">
+        <div class="col-md-5">
+            <label class="form-label small fw-bold">1. Select Target Class</label>
+            <select id="classSelect" class="form-select border-0 bg-light rounded-3 p-3">
+                <option value="" selected disabled>Choose a class...</option>
+                {% for cls in lower_classes %}
+                <option value="{{ cls.id }}">{{ cls.name }} ({{ cls.manual_students.count }} Students)</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-5">
+            <label class="form-label small fw-bold">2. Choose Heritage Story</label>
+            <select id="storySelect" class="form-select border-0 bg-light rounded-3 p-3">
+                <option value="" selected disabled>Choose a story...</option>
+                {% for story in lower_stories %}
+                <option value="{{ story.topic.id }}/{{ story.id }}">{{ story.title }} ({{ story.topic.title }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="button" onclick="launchSession()" class="btn-gold-p btn-p-pill w-100 py-3 border-0">
+                Launch <i class="fa-solid fa-play ms-1"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function launchSession() {
+        const classId = document.getElementById('classSelect').value;
+        const storyValue = document.getElementById('storySelect').value;
+        
+        if (!classId || !storyValue) {
+            alert('Please select both a class and a story to proceed.');
+            return;
+        }
+        
+        const [topicId, storyId] = storyValue.split('/');
+        
+        // Redirect to start session with all IDs
+        const url = `/teacher/lower/session/start/${topicId}/story/${storyId}/class/${classId}/`;
+        window.location.href = url;
+    }
+</script>
+
+<!-- --- Guest Classes (Account-Free) --- -->
+<div class="analytics-card-p mt-4" style="grid-column: span 2;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="card-label-p mb-0">Class Roster Management</h3>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+        {% for cls in lower_classes %}
+        <div class="stat-tile-p flex-column align-items-start" style="padding: 20px; border-radius: 16px; background: #fff; border: 1px solid #eee;">
+            <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+                <div>
+                    <h4 style="margin-bottom: 2px; font-weight: 700; color: var(--text-deep);">{{ cls.name }}</h4>
+                    <span class="badge bg-light text-muted fw-normal">{{ cls.grade }}</span>
+                </div>
+                <div class="stat-icon-p" style="width: 40px; height: 40px; font-size: 1rem;"><i class="fa-solid fa-users"></i></div>
+            </div>
+            <p class="text-muted small mb-3">
+                <i class="fa-solid fa-user-check me-1"></i> <strong>{{ cls.manual_students.count }}</strong> students ready for evaluation.
+            </p>
+            <div class="d-flex gap-2 w-100">
+                <a href="{% url 'teacher_class_detail' cls.id %}" class="btn btn-sm btn-outline-p flex-grow-1 text-center text-decoration-none py-2" style="border-radius: 10px;">
+                    Edit Roster
+                </a>
+                <a href="{% url 'lower_class_analytics' %}?class_id={{ cls.id }}" class="btn btn-sm btn-light flex-grow-1 text-center text-decoration-none py-2" style="border-radius: 10px;">
+                    View Performance
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-4 w-100">
+            <p class="text-muted italic">No guest classes created. Create one to start evaluating students.</p>
+            <a href="{% url 'teacher_manage_classes' %}" class="btn-sm btn-gold-p text-decoration-none">Create My First Class</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if recent_sessions %}
+<div class="analytics-card-p mt-4" style="grid-column: span 2;">
+    <h3 class="card-label-p">Recent Sessions (Lower Class)</h3>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Topic</th>
+                    <th>Started At</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in recent_sessions %}
+                <tr>
+                    <td>{{ session.topic.title }}</td>
+                    <td>{{ session.started_at|date:"M d, Y H:i" }}</td>
+                    <td><small class="text-muted">{{ session.notes|truncatechars:30|default:"No notes" }}</small></td>
+                    <td>
+                        <a href="#" class="btn-sm btn-outline-p text-decoration-none">View Session</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- --- Primary School Resources Banner --- -->
+<div class="ai-hero-p" style="background: linear-gradient(135deg, #1a4d2e 0%, #2d6a4f 100%);">
+    <div class="ai-hero-content-p">
+        <h2>Primary Education Suite</h2>
+        <p>Simplified tools to help you manage your younger learners effectively.</p>
+        <ul class="ai-use-cases">
+            <li><i class="fa-solid fa-check"></i> Easy student enrollment tracking</li>
+            <li><i class="fa-solid fa-check"></i> Simple marking system</li>
+            <li><i class="fa-solid fa-check"></i> Visual progress overview</li>
+        </ul>
+    </div>
+    <div class="ai-mascot-p">
+        <div style="font-size: 100px;">🏫</div>
+    </div>
+</div>

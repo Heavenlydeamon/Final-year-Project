@@ -1,0 +1,418 @@
+<!-- Dashboard Content -->
+
+
+<!-- --- Alert Panel --- -->
+<div class="alert-panel">
+    {% if pending_quizzes > 0 or pending_join_requests > 0 %}
+        {% if pending_quizzes > 0 %}
+        <div class="alert-box">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>⚠️ {{ pending_quizzes }} quizzes pending approval</span>
+            <a href="{% url 'teacher_quiz_approval' %}" class="btn-sm btn-gold-p ms-auto text-decoration-none">Review Now</a>
+        </div>
+        {% endif %}
+        {% if pending_join_requests > 0 %}
+        <div class="alert-box" style="border-left-color: #2d6a4f; background: rgba(45, 106, 79, 0.05);">
+            <i class="fa-solid fa-user-clock" style="color: #2d6a4f;"></i>
+            <span>🔔 You have {{ pending_join_requests }} pending join requests</span>
+            <a href="{% url 'teacher_view_join_requests' %}" class="btn-sm btn-outline-p ms-auto text-decoration-none" style="border-color: #2d6a4f; color: #2d6a4f !important;">View Requests</a>
+        </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+<!-- --- Live Interaction Pulse Bar --- -->
+<div class="live-pulse-container mb-4">
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <div class="pulse-dot"></div>
+        <span class="text-uppercase fw-bold small" style="letter-spacing: 1.5px; color: var(--accent-gold);">Live Student Pulse</span>
+    </div>
+    <div class="pulse-track">
+        <div class="pulse-scroll">
+            {% for activity in live_interactions %}
+            <div class="pulse-item">
+                <div class="pulse-icon {{ activity.type_class }}">
+                    <i class="fa-solid {{ activity.icon }}"></i>
+                </div>
+                <div class="pulse-content">
+                    <span class="p-user">{{ activity.user }}</span>
+                    <span class="p-action">{{ activity.detail }}</span>
+                    <span class="p-target">{{ activity.target }}</span>
+                </div>
+                <div class="pulse-time">{{ activity.timestamp|timesince }} ago</div>
+            </div>
+            {% empty %}
+            <div class="pulse-item empty">
+                <span class="text-muted small">No live activity recorded yet.</span>
+            </div>
+            {% endfor %}
+            <!-- Duplicate for infinite scroll effect if needed, but let's stick to flex-wrap or scroll for now -->
+        </div>
+    </div>
+</div>
+
+<style>
+    .live-pulse-container {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(179, 139, 77, 0.1);
+        border-radius: 20px;
+        padding: 15px 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+    }
+    .pulse-dot {
+        width: 8px;
+        height: 8px;
+        background: #ff4d4d;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #ff4d4d;
+        animation: pulse-red 2s infinite;
+    }
+    @keyframes pulse-red {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 77, 77, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); }
+    }
+    .pulse-track {
+        overflow-x: auto;
+        padding-bottom: 5px;
+    }
+    .pulse-track::-webkit-scrollbar { height: 4px; }
+    .pulse-track::-webkit-scrollbar-thumb { background: var(--accent-gold-glow); border-radius: 10px; }
+    
+    .pulse-scroll {
+        display: flex;
+        gap: 20px;
+        width: max-content;
+    }
+    .pulse-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #fff;
+        padding: 8px 15px;
+        border-radius: 12px;
+        border: 1px solid #f0f0f0;
+        min-width: 250px;
+        transition: all 0.3s ease;
+    }
+    .pulse-item:hover {
+        border-color: var(--accent-gold);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    .pulse-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+    
+    /* Type-specific Pulse Colors */
+    .pulse-quiz { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .pulse-mastery { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+    .pulse-study { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .pulse-learn { background: rgba(99, 102, 241, 0.15); color: #6366f1; }
+    .pulse-challenge { background: rgba(249, 115, 22, 0.15); color: #f97316; }
+
+    .pulse-content {
+        display: flex;
+        flex-direction: column;
+    }
+    .p-user { font-weight: 700; font-size: 0.8rem; color: var(--text-deep); }
+    .p-action { font-size: 0.75rem; color: var(--text-muted); }
+    .p-target { font-size: 0.7rem; font-weight: 600; color: var(--accent-gold); }
+    .pulse-time {
+        margin-left: auto;
+        font-size: 0.65rem;
+        color: #bbb;
+        font-style: italic;
+    }
+</style>
+
+<!-- --- Primary Action Hero --- -->
+<div class="primary-action-hero">
+        <h2>🚀 Recommended Action</h2>
+        <p>Improve student engagement by generating fresh curriculum-based assessments.</p>
+    <a href="{% url 'teacher_ai_quiz_generator' %}" class="btn-p-pill btn-warning btn-lg">
+        Generate New Quiz
+    </a>
+</div>
+
+<!-- --- Bento Grid Dashboard --- -->
+<div class="bento-grid-p">
+    <!-- Stat: Quizzes (Bento Card) -->
+    <div class="bento-col-3 bento-card-p stat-bento" title="Total quizzes created in the system">
+        <div class="icon-p"><i class="fa-solid fa-file-lines"></i></div>
+        <div class="value-p">{{ total_sections }}</div>
+        <div class="label-p">Total Quizzes</div>
+    </div>
+
+    <!-- Stat: Classes -->
+    <div class="bento-col-3 bento-card-p stat-bento" title="Total classes managed by you">
+        <div class="icon-p"><i class="fa-solid fa-users-rectangle"></i></div>
+        <div class="value-p">{{ managed_classes|length }}</div>
+        <div class="label-p">Managed Classes</div>
+    </div>
+
+    <!-- Stat: Students -->
+    <div class="bento-col-3 bento-card-p stat-bento" title="Total active students enrolled">
+        <div class="icon-p"><i class="fa-solid fa-user-graduate"></i></div>
+        <div class="value-p">{{ total_students }}</div>
+        <div class="label-p">Active Students</div>
+    </div>
+
+    <!-- Stat: Total Marks/XP -->
+    <div class="bento-col-3 bento-card-p stat-bento" title="Cumulative student performance points">
+        <div class="icon-p"><i class="fa-solid fa-clipboard-check"></i></div>
+        <div class="value-p">{{ total_questions|add:"100" }}</div>
+        <div class="label-p">Total XP Pool</div>
+    </div>
+
+    <!-- Engagement Trend Chart (Large Card) -->
+    <div class="bento-col-8 bento-card-p trend-card-p">
+        <div class="trend-header">
+            <h3 class="trend-title">🚀 Student Engagement Pulse</h3>
+            <span class="trend-badge">Weekly Trend</span>
+        </div>
+        <div style="height: 300px; position: relative;">
+            <canvas id="engagementTrendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Global Leaderboard (Bento Card - Top Right) -->
+    <div class="bento-col-4 bento-card-p" style="background: linear-gradient(135deg, #fff, #f9f6f0);">
+        <h3 class="card-label-p"><i class="fa-solid fa-medal me-2" style="color: var(--accent-gold);"></i> Top Guardians</h3>
+        <div class="leaderboard-mini-scroll" style="margin-top: 15px;">
+            {% for entry in global_leaderboard %}
+            <div class="d-flex align-items-center mb-3 p-2 rounded-3" style="background: rgba(255,255,255,0.5); border: 1px solid #eee;">
+                <div class="rank-mini {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% else %}rank-other{% endif %}" style="width: 28px; height: 28px; font-size: 0.75rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; margin-right: 12px;">
+                    {{ forloop.counter }}
+                </div>
+                <div class="flex-grow-1">
+                    <div class="fw-bold small">{{ entry.user_identifier }}</div>
+                    <div class="extra-small text-muted">{{ entry.total_attempts }} missions</div>
+                </div>
+                <div class="fw-bold text-gold-p" style="font-size: 0.9rem;">{{ entry.total_score }}</div>
+            </div>
+            {% empty %}
+            <div class="text-center py-4 text-muted small">No global data yet.</div>
+            {% endfor %}
+        </div>
+        <div class="mt-auto pt-2 border-top">
+            <a href="#" class="text-decoration-none small fw-bold text-gold-p">Full Leaderboard →</a>
+        </div>
+    </div>
+
+    <!-- Smart Insights (Bento Card) -->
+    <div class="bento-col-4 bento-card-p dark">
+        <h3 class="card-label-p text-white">📊 Smart Insights</h3>
+        <ul class="insights-list" style="background: transparent;">
+            <li style="background: rgba(255,255,255,0.05); color: #ddd; border-color: var(--accent-gold);">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>🔥 <strong>Class 10A</strong> is performing 15% better than last month.</span>
+            </li>
+            <li style="background: rgba(255,255,255,0.05); color: #ddd; border-color: #ff6b6b;">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>⚠️ 5 students scored below 40% in recent attempts.</span>
+            </li>
+            <li style="background: rgba(255,255,255,0.05); color: #ddd; border-color: #ffc107;">
+                <i class="fa-solid fa-lightbulb"></i>
+                <span>💡 Suggestion: Try adding more images to the 'Science' quiz.</span>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Latest Activity (Bento Card) -->
+    <div class="bento-col-4 bento-card-p">
+        <h3 class="card-label-p">Latest Activity</h3>
+        <div class="activity-scroll" style="max-height: 250px; overflow-y: auto;">
+            <ul class="activity-list">
+                {% if recent_attempts %}
+                {% for attempt in recent_attempts %}
+                <li class="activity-item" style="padding: 10px 0;">
+                    <div class="activity-user">
+                        <h5 class="small fw-bold m-0">{{ attempt.user_identifier }}</h5>
+                        <p class="extra-small text-muted m-0">{{ attempt.section.name }} • {{ attempt.date_attempted|date:"M d" }}</p>
+                    </div>
+                    <div class="activity-score small fw-bold">{{ attempt.score }}/{{ attempt.total_questions }}</div>
+                </li>
+                {% endfor %}
+                {% else %}
+                <li class="activity-item"><p class="text-muted small">No recent activity.</p></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- NEW: Quick Rankings Hub -->
+    <div class="bento-col-4 bento-card-p">
+        <div class="h-100" style="background: white; border-radius: 24px; padding: 25px;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold m-0" style="font-family: 'Tenor Sans';"><i class="fa-solid fa-ranking-star text-gold-p me-2"></i> Class Rankings</h5>
+                <span class="badge rounded-pill bg-gold-p text-dark px-3">Live Status</span>
+            </div>
+            
+            <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                {% for class_obj in managed_classes %}
+                <div class="list-group-item border-0 px-0 py-3" style="background: transparent;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="fw-bold">{{ class_obj.name }}</div>
+                        <span class="extra-small text-muted">{{ class_obj.get_total_students }} Students</span>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        {% for topic in class_obj.sections.first.topic_set.all|slice:":2" %}
+                        <a href="{% url 'teacher_class_topic_leaderboard' class_obj.id topic.id %}" class="btn btn-sm btn-outline-dark rounded-pill py-1 px-3" style="font-size: 0.65rem;">
+                            {{ topic.name }} <i class="fa-solid fa-trophy ms-1 opacity-50"></i>
+                        </a>
+                        {% endfor %}
+                        <a href="{% url 'teacher_class_detail' class_obj.id %}#leaderboard" class="btn btn-sm btn-light rounded-pill py-1 px-3" style="font-size: 0.65rem;">
+                            All Topics <i class="fa-solid fa-chevron-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted small">No classes managed yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Assistant (Bento Card) -->
+    <div class="bento-col-4 bento-card-p glass" style="background: linear-gradient(135deg, rgba(179, 139, 77, 0.1), rgba(0, 0, 0, 0.05));">
+        <div class="d-flex flex-column h-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h3 class="card-label-p m-0">AI Content</h3>
+                <div id="engineStatusPill">
+                    <div class="status-pill-p status-waiting" style="font-size: 0.55rem; padding: 3px 8px;">
+                        <span class="pulse-p" style="width: 6px; height: 6px;"></span> Checking...
+                    </div>
+                </div>
+            </div>
+            <p class="text-muted small">Generate curriculum-based quizzes instantly using AI Forge (Gemma 2B).</p>
+            <div class="mt-auto d-flex gap-2">
+                <a href="{% url 'teacher_ai_quiz_generator' %}" class="btn btn-sm btn-gold-p rounded-pill px-3">Generate</a>
+                <a href="{% url 'teacher_quiz_approval' %}" class="btn btn-sm btn-outline-p rounded-pill px-3">Review</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- --- AI Assistant Section --- -->
+<div class="ai-hero-p">
+    <div class="ai-hero-content-p">
+        <h2>AI Assistant</h2>
+        <p>Enhance your teaching workflow with AI-powered features:</p>
+        <ul class="ai-use-cases">
+            <li><i class="fa-solid fa-circle-check"></i> Generate quizzes from lesson content instantly</li>
+        </ul>
+        <div class="d-flex gap-3">
+            <a href="{% url 'teacher_ai_quiz_generator' %}" class="btn-p-pill btn-gold-p">AI Quiz Maker</a>
+            <a href="{% url 'teacher_quiz_approval' %}" class="btn-p-pill btn-outline-p">Review Content</a>
+        </div>
+    </div>
+    <div class="ai-mascot-p">
+        <div style="font-size: 100px; filter: drop-shadow(0 0 20px var(--accent-gold));">🤖</div>
+    </div>
+</div>
+
+<!-- --- Topic Heatmap Section --- -->
+<div class="analytics-card-p mt-4 mb-5 border-0">
+    <style>
+        .heatmap-struggle { border-left-color: #bf616a !important; }
+        .heatmap-struggle .h-value { color: #bf616a; }
+        .heatmap-needs-work { border-left-color: #ebcb8b !important; }
+        .heatmap-needs-work .h-value { color: #ebcb8b; }
+        .heatmap-mastery { border-left-color: #a3be8c !important; }
+        .heatmap-mastery .h-value { color: #a3be8c; }
+    </style>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="card-label-p m-0">Topic Mastery Heatmap</h3>
+            <p class="text-muted small">Visual layout of entire curriculum performance.</p>
+        </div>
+        <div class="d-flex gap-3 text-white small">
+            <div class="d-flex align-items-center gap-1"><div style="width:12px;height:12px;background:#bf616a;border-radius:3px;"></div> Struggle (< 50%)</div>
+            <div class="d-flex align-items-center gap-1"><div style="width:12px;height:12px;background:#ebcb8b;border-radius:3px;"></div> Needs Work</div>
+            <div class="d-flex align-items-center gap-1"><div style="width:12px;height:12px;background:#a3be8c;border-radius:3px;"></div> Mastery (>= 75%)</div>
+        </div>
+    </div>
+    
+    <div class="d-flex flex-wrap gap-2">
+        {% for t in topic_heatmap_data %}
+            <div class="heatmap-{{ t.status }}" style="background: rgba(0,0,0,0.3); border-radius: 8px; border-left: 4px solid #fff; padding: 10px 15px; width: 100%; max-width: 250px;">
+                <div class="fw-bold text-white text-truncate" title="{{ t.topic_name }}">{{ t.topic_name }}</div>
+                <div class="d-flex justify-content-between text-muted small mt-2">
+                    <span class="h-value" style="font-weight: 800;">{{ t.avg_percentage }}%</span>
+                    <span>{{ t.total_attempts }} attmts</span>
+                </div>
+            </div>
+        {% empty %}
+            <div class="text-muted">No topic data available yet based on current student activity.</div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- --- Advanced Charts Section --- -->
+<div class="analytics-grid-p">
+    <div class="analytics-card-p">
+        <h3 class="card-label-p">Class Distribution</h3>
+        <div style="position: relative; height: 300px;">
+            {% if class_names_json %}
+            <canvas id="classChart"></canvas>
+            {% else %}
+            <div class="d-flex align-items-center justify-content-center h-100">
+                <p class="text-muted">No data available.</p>
+            </div>
+            {% endif %}
+        </div>
+        <p class="text-muted small mt-3">
+            📌 <strong>Insight:</strong> Your largest class is Class 10A with {{ total_students }} active students.
+        </p>
+    </div>
+
+    <div class="analytics-card-p">
+        <h3 class="card-label-p">Average Performance</h3>
+        <div style="position: relative; height: 300px;">
+            {% if score_labels_json %}
+            <canvas id="scoreChart"></canvas>
+            {% else %}
+            <p class="text-muted text-center">No data available.</p>
+            {% endif %}
+        </div>
+        <p class="text-muted small mt-3">
+            📌 <strong>Insight:</strong> Mastery in 'Culture' topics is high, but 'Science' needs review.
+        </p>
+    </div>
+</div>
+
+<!-- --- Secondary Action Matrix --- -->
+<div class="action-row-p">
+    <div class="action-tile-p">
+        <div class="action-icon-tile"><i class="fa-solid fa-building-columns"></i></div>
+        <h4>Class Logistics</h4>
+        <p>Manage rosters and enrollments.</p>
+        <a href="{% url 'teacher_manage_classes' %}" class="btn-p-pill btn-outline-p btn-sm">Manage Class</a>
+    </div>
+    <div class="action-tile-p">
+        <div class="action-icon-tile"><i class="fa-solid fa-user-plus"></i></div>
+        <h4>Join Requests</h4>
+        <p>Validate new student entries.</p>
+        <a href="{% url 'teacher_view_join_requests' %}" class="btn-p-pill btn-outline-p btn-sm">View Requests</a>
+    </div>
+    <div class="action-tile-p">
+        <div class="action-icon-tile"><i class="fa-solid fa-award"></i></div>
+        <h4>Academic Marks</h4>
+        <p>Update evaluation grades.</p>
+        <a href="{% url 'teacher_manage_classes' %}" class="btn-p-pill btn-outline-p btn-sm">Valuations</a>
+    </div>
+    <div class="action-tile-p">
+        <div class="action-icon-tile"><i class="fa-solid fa-check-double"></i></div>
+        <h4>Quiz Reviews</h4>
+        <p>Approve AI generated content.</p>
+        <a href="{% url 'teacher_quiz_approval' %}" class="btn-p-pill btn-outline-p btn-sm">View Requests</a>
+    </div>
+</div>

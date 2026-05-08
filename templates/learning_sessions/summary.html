@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Session Summary | {{ session.topic.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --heritage-cream: #f8f6f0;
+        --sidebar-dark: #121212;
+        --accent-gold: #b38b4d;
+        --accent-green: #10b981;
+        --accent-red: #ef4444;
+        --accent-orange: #f59e0b;
+    }
+    
+    body { 
+        background-color: var(--heritage-cream) !important; 
+        font-family: 'Inter', sans-serif; 
+    }
+    
+    .summary-wrapper {
+        max-width: 800px;
+        margin: 50px auto;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        padding: 50px;
+        text-align: center;
+    }
+
+    .stars-display {
+        font-size: 60px;
+        margin-bottom: 20px;
+        letter-spacing: 10px;
+    }
+
+    .star.filled {
+        color: var(--accent-gold);
+    }
+    
+    .star.empty {
+        color: #e2e8f0;
+    }
+
+    .summary-title {
+        font-family: 'Tenor Sans', serif;
+        font-size: 2rem;
+        margin-bottom: 30px;
+        color: var(--sidebar-dark);
+    }
+
+    .performance-summary {
+        background: #fdfaf5;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 40px;
+        text-align: left;
+        border: 1px solid rgba(179, 139, 77, 0.2);
+    }
+
+    .performance-summary p {
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+        color: #4b5563;
+    }
+
+    .performance-summary p:last-child {
+        margin-bottom: 0;
+    }
+
+    .response-chart {
+        margin-bottom: 40px;
+        text-align: left;
+    }
+
+    .response-chart h3 {
+        font-family: 'Tenor Sans', serif;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+    }
+
+    .bar-container {
+        margin-bottom: 15px;
+    }
+
+    .bar-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #4b5563;
+        text-transform: uppercase;
+    }
+
+    .bar-bg {
+        width: 100%;
+        height: 12px;
+        background: #f3f4f6;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .bar {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 1s ease-out;
+    }
+
+    .bar.good { background: var(--accent-green); }
+    .bar.mixed { background: var(--accent-orange); }
+    .bar.struggled { background: var(--accent-red); }
+
+    .actions {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        margin-top: 40px;
+    }
+
+    .btn-action {
+        padding: 15px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: 0.3s;
+        font-size: 1.1rem;
+    }
+
+    .btn-outline {
+        border: 2px solid var(--sidebar-dark);
+        color: var(--sidebar-dark);
+    }
+
+    .btn-outline:hover {
+        background: var(--sidebar-dark);
+        color: #fff;
+    }
+
+    .btn-primary {
+        background: var(--accent-gold);
+        color: #fff;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: #9a7640;
+        color: #fff;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="summary-wrapper">
+    <div class="stars-display">
+        {% for i in "123" %}
+            {% if forloop.counter <= star_data.stars %}
+                <span class="star filled">★</span>
+            {% else %}
+                <span class="star empty">★</span>
+            {% endif %}
+        {% endfor %}
+    </div>
+    
+    <h2 class="summary-title">{{ star_data.message }}</h2>
+    
+    <div class="performance-summary">
+        <p>Topic: <strong>{{ session.topic.title }}</strong></p>
+        <p>Story: <strong>{{ session.story.title }}</strong></p>
+        <p>Duration: {{ session.started_at|timesince:session.ended_at }}</p>
+    </div>
+    
+    <div class="response-chart">
+        <h3>Class Performance</h3>
+        
+        <div class="bar-container">
+            <div class="bar-label">
+                <span>Good ({{ response_breakdown.good }})</span>
+                <span>{{ response_breakdown.good_pct }}%</span>
+            </div>
+            <div class="bar-bg">
+                <div class="bar good" data-width="{{ response_breakdown.good_pct }}%"></div>
+            </div>
+        </div>
+        
+        <div class="bar-container">
+            <div class="bar-label">
+                <span>Mixed ({{ response_breakdown.mixed }})</span>
+                <span>{{ response_breakdown.mixed_pct }}%</span>
+            </div>
+            <div class="bar-bg">
+                <div class="bar mixed" data-width="{{ response_breakdown.mixed_pct }}%"></div>
+            </div>
+        </div>
+        
+        <div class="bar-container">
+            <div class="bar-label">
+                <span>Struggled ({{ response_breakdown.struggled }})</span>
+                <span>{{ response_breakdown.struggled_pct }}%</span>
+            </div>
+            <div class="bar-bg">
+                <div class="bar struggled" data-width="{{ response_breakdown.struggled_pct }}%"></div>
+            </div>
+        </div>
+    </div>
+    
+    {% if students %}
+    <div class="evaluation-section mt-5" style="text-align: left;">
+        <h3 style="font-family: 'Tenor Sans', serif; margin-bottom: 25px; font-size: 1.5rem;">Individual Student Evaluation</h3>
+        <p class="text-muted mb-4">Rate how each student performed during the "{{ session.topic.title }}" session.</p>
+        
+        <form action="{% url 'learning_sessions:submit_evaluations' session.id %}" method="POST">
+            {% csrf_token %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Rating</th>
+                            <th>Remarks (Optional)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr>
+                            <td class="fw-bold">{{ student.name }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <input type="radio" class="btn-check" name="rating_{{ student.id }}" id="good_{{ student.id }}" value="good" required>
+                                    <label class="btn btn-outline-success" for="good_{{ student.id }}">Good</label>
+                                    
+                                    <input type="radio" class="btn-check" name="rating_{{ student.id }}" id="mixed_{{ student.id }}" value="mixed">
+                                    <label class="btn btn-outline-warning" for="mixed_{{ student.id }}">Mixed</label>
+                                    
+                                    <input type="radio" class="btn-check" name="rating_{{ student.id }}" id="struggled_{{ student.id }}" value="struggled">
+                                    <label class="btn btn-outline-danger" for="struggled_{{ student.id }}">Struggled</label>
+                                </div>
+                            </td>
+                            <td>
+                                <input type="text" name="remarks_{{ student.id }}" class="form-control form-control-sm" placeholder="Note...">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-center mt-4">
+                <button type="submit" class="btn-action btn-primary w-100">Submit All Evaluations</button>
+            </div>
+        </form>
+    </div>
+    {% else %}
+    <div class="actions">
+        <a href="{% url 'learning_sessions:session_history' %}" class="btn-action btn-outline">View History</a>
+        <a href="{% url 'teacher_dashboard' %}" class="btn-action btn-primary">Return to Dashboard</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // Apply dynamic widths via JS to prevent IDE CSS parsing errors on inline styles
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll('.bar').forEach(bar => {
+            const width = bar.getAttribute('data-width');
+            if (width) {
+                // Slight delay for animation effect
+                setTimeout(() => {
+                    bar.style.width = width;
+                }, 100);
+            }
+        });
+    });
+</script>
+{% endblock %}

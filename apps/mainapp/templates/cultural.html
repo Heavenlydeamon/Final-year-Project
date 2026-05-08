@@ -1,0 +1,453 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cultural Artforms - EcoHeritage Kerala{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Montserrat:wght@300;400;600&display=swap');
+
+    :root {
+        --bg-soft-cream: #FDFBF7;
+        --slate-900: #0F172A;
+        --slate-800: #1E293B;
+        --slate-700: #334155;
+        --slate-600: #475569;
+        --muted-terracotta: #A6634B;
+        --soft-terracotta: #C08261;
+        --glass-white: rgba(255, 255, 255, 0.9);
+        --soft-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+        --hover-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+    }
+
+    body {
+        background-color: var(--bg-soft-cream);
+        color: var(--slate-800);
+        font-family: 'Montserrat', sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, .module-title {
+        font-family: 'Merriweather', serif !important;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+
+    /* ─── Refined Hero Section ─── */
+    .video-hero {
+        position: relative;
+        height: 60vh;
+        width: 100%;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 80px;
+        background: #1a0a04;
+    }
+
+    .video-container {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+    }
+
+    .hero-video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.65;
+    }
+
+    .video-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            to bottom,
+            rgba(26, 10, 4, 0.25) 0%,
+            rgba(26, 10, 4, 0.55) 100%
+        );
+        z-index: 2;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 3;
+        text-align: center;
+        padding: 0 24px;
+        max-width: 900px;
+    }
+
+    .section-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 5px;
+        text-transform: uppercase;
+        color: var(--soft-terracotta);
+        display: block;
+        margin-bottom: 1.5rem;
+    }
+
+    .hero-content h1 {
+        color: white;
+        font-size: clamp(2.8rem, 7vw, 4.8rem);
+        margin-bottom: 24px;
+        line-height: 1.1;
+        text-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    .header-description {
+        margin: 0 auto;
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 1.15rem;
+        font-weight: 300;
+        line-height: 1.8;
+        max-width: 600px;
+        text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+
+    /* ─── Bento Grid ─── */
+    .module-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        grid-auto-rows: 280px;
+        gap: 32px;
+        padding: 40px 0 120px;
+    }
+
+    .span-4-hero    { grid-column: span 4; grid-row: span 2; }
+    .span-2-portrait{ grid-column: span 2; grid-row: span 2; }
+    .span-3-wide    { grid-column: span 3; grid-row: span 1; }
+    .span-2-reg     { grid-column: span 2; grid-row: span 1; }
+
+    /* ─── Card Base ─── */
+    .module-card {
+        background: white;
+        border-radius: 32px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: var(--soft-shadow);
+        border: 1px solid rgba(0,0,0,0.03);
+        transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+                    box-shadow 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .module-card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--hover-shadow);
+        z-index: 10;
+    }
+
+    /* ─── Image Layer ─── */
+    .module-image-wrapper {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+    }
+
+    .span-4-hero .module-image-wrapper {
+        left: 45%;
+        right: 0;
+        width: auto;
+    }
+
+    .module-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 3s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    .module-card:hover .module-image {
+        transform: scale(1.08);
+    }
+
+    /* ─── Subtle overlay ─── */
+    .card-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        background: linear-gradient(to top, rgba(15, 23, 42, 0.8) 0%, rgba(15, 23, 42, 0) 60%);
+    }
+
+    .span-4-hero .card-overlay {
+        left: 45%;
+        background: linear-gradient(to right, white 0%, rgba(255,255,255,0) 20%);
+    }
+
+    /* ─── Hero Text Panel ─── */
+    .hero-text-panel {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 45%;
+        bottom: 0;
+        z-index: 5;
+        padding: 50px 45px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background: white;
+    }
+
+    /* ─── Regular Card Content ─── */
+    .module-content {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+    }
+
+    /* ─── Index Badge ─── */
+    .module-index {
+        position: absolute;
+        top: 30px;
+        right: 35px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+        color: var(--slate-900);
+        opacity: 0.1;
+        z-index: 6;
+    }
+
+    /* ─── Category Label ─── */
+    .category-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        color: var(--muted-terracotta);
+        margin-bottom: 12px;
+        display: block;
+    }
+
+    /* ─── Title ─── */
+    .module-title {
+        line-height: 1.2;
+        margin: 0 0 16px;
+        color: var(--slate-900);
+    }
+
+    .span-4-hero .module-title   { font-size: 2.8rem; }
+    .span-2-portrait .module-title{ font-size: 2.4rem; color: white; }
+    .span-3-wide .module-title   { font-size: 1.8rem; color: white; }
+    .span-2-reg .module-title    { font-size: 1.5rem; color: white; }
+
+    .hero-text-panel .module-title { color: var(--slate-900); }
+
+    /* ─── Description ─── */
+    .module-desc {
+        font-size: 0.95rem;
+        line-height: 1.7;
+        color: var(--slate-600);
+        margin-bottom: 30px;
+    }
+
+    .module-content .module-desc {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .span-2-reg .module-desc  { display: none; }
+    .span-3-wide .module-desc { display: none; }
+
+    /* ─── Enhanced Buttons ─── */
+    .module-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .btn-bento {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 28px;
+        border-radius: 14px;
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-journey {
+        background: var(--muted-terracotta);
+        color: white;
+    }
+
+    .btn-journey:hover {
+        background: var(--slate-900);
+        transform: translateY(-4px);
+        color: white;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+
+    .btn-quiz-bento {
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(12px);
+        color: white;
+    }
+
+    .hero-text-panel .btn-quiz-bento {
+        background: var(--bg-soft-cream);
+        border-color: rgba(0,0,0,0.1);
+        color: var(--slate-700);
+    }
+
+    .btn-quiz-bento:hover {
+        background: white;
+        color: var(--slate-900);
+        border-color: white;
+        transform: translateY(-4px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    }
+
+    /* ─── Smooth Reveal Animation ─── */
+    .reveal {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 1.2s cubic-bezier(0.2, 1, 0.3, 1),
+                    transform 1.2s cubic-bezier(0.2, 1, 0.3, 1);
+    }
+
+    .reveal.active {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 1100px) {
+        .module-grid {
+            grid-template-columns: repeat(2, 1fr);
+            grid-auto-rows: 300px;
+            gap: 24px;
+        }
+        .span-4-hero, .span-2-portrait, .span-3-wide, .span-2-reg {
+            grid-column: span 1;
+            grid-row: span 1;
+        }
+        .span-4-hero .module-image-wrapper { left: 0; width: 100%; }
+        .span-4-hero .hero-text-panel      { display: none; }
+        .hero-mobile                        { display: flex !important; }
+        .span-4-hero .card-overlay         {
+            left: 0; width: 100%;
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.1));
+        }
+        .module-title { font-size: 1.8rem !important; color: white !important; }
+        .module-desc { color: rgba(255,255,255,0.8) !important; }
+    }
+
+    @media (max-width: 768px) {
+        .module-grid {
+            grid-template-columns: 1fr;
+            grid-auto-rows: auto;
+        }
+        .module-card { min-height: 340px; }
+        .hero-content h1 { font-size: 2.5rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <section class="video-hero">
+        <div class="video-container">
+            <div class="video-overlay"></div>
+            <video autoplay muted loop playsinline class="hero-video">
+                <source src="{% static 'video/cultural.mp4' %}" type="video/mp4">
+            </video>
+        </div>
+        <div class="hero-content reveal">
+            <span class="section-label">Cultural Heritage</span>
+            <h1>Cultural Artforms</h1>
+            <p class="header-description">Kerala's traditional dance, music, and martial arts — presented as interactive study modules.</p>
+        </div>
+    </section>
+</div>
+
+<div class="container">
+    <div class="module-grid">
+        {% for topic in topics %}
+        {% cycle 'span-4-hero' 'span-2-portrait' 'span-3-wide' 'span-3-wide' 'span-2-reg' 'span-2-reg' 'span-2-reg' as bento_span silent %}
+        <div class="module-card {{ bento_span }} reveal">
+
+            <div class="module-image-wrapper">
+                {% if topic.image_url %}
+                    <img src="{{ topic.image_url }}" alt="{{ topic.name }}" class="module-image" loading="lazy">
+                {% else %}
+                    <div style="width:100%;height:100%;background:linear-gradient(135deg,#A6634B,#C08261);display:flex;align-items:center;justify-content:center;">
+                        <i class="fa-solid fa-masks-theater fa-3x" style="color:rgba(255,255,255,0.25)"></i>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="card-overlay"></div>
+            <span class="module-index">{{ forloop.counter|stringformat:"02d" }}</span>
+
+            {% if bento_span == 'span-4-hero' %}
+                <div class="hero-text-panel">
+                    <span class="category-label">Cultural Heritage</span>
+                    <h2 class="module-title">{{ topic.name }}</h2>
+                    <p class="module-desc">{{ topic.description|truncatewords:22 }}</p>
+                    <div class="module-actions">
+                        <a href="{% url 'topic_study' topic.id %}" class="btn-bento btn-journey"><i class="fa-solid fa-masks-theater"></i> Artforms</a>
+                        <a href="{% url 'topic_quiz' topic.id %}" class="btn-bento btn-quiz-bento"><i class="fa-solid fa-lightbulb"></i> Quiz</a>
+                    </div>
+                </div>
+                <div class="module-content hero-mobile" style="display:none;">
+                    <span class="category-label">Cultural Heritage</span>
+                    <h2 class="module-title">{{ topic.name }}</h2>
+                    <div class="module-actions">
+                        <a href="{% url 'topic_study' topic.id %}" class="btn-bento btn-journey"><i class="fa-solid fa-masks-theater"></i> Artforms</a>
+                        <a href="{% url 'topic_quiz' topic.id %}" class="btn-bento btn-quiz-bento"><i class="fa-solid fa-lightbulb"></i> Quiz</a>
+                    </div>
+                </div>
+
+            {% else %}
+                <div class="module-content">
+                    <span class="category-label">{% if bento_span == 'span-2-portrait' %}Featured Form{% else %}Module{% endif %}</span>
+                    <h2 class="module-title">{{ topic.name }}</h2>
+                    {% if bento_span == 'span-2-portrait' %}
+                        <p class="module-desc">{{ topic.description|truncatewords:18 }}</p>
+                    {% endif %}
+                    <div class="module-actions">
+                        <a href="{% url 'topic_study' topic.id %}" class="btn-bento btn-journey"><i class="fa-solid fa-book-open"></i> Study</a>
+                        <a href="{% url 'topic_quiz' topic.id %}" class="btn-bento btn-quiz-bento"><i class="fa-solid fa-lightbulb"></i> Quiz</a>
+                    </div>
+                </div>
+            {% endif %}
+
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5 reveal">
+            <p style="color:var(--slate-600);opacity:0.5">New cultural modules are currently being curated. Check back soon.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center pb-5 mb-5 reveal">
+        <a href="/" class="btn-bento btn-journey px-5"><i class="fa-solid fa-arrow-left"></i> Return to Home</a>
+    </div>
+</div>
+
+<script>
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('active');
+            }
+        });
+    }, { threshold: 0.08 });
+
+    document.querySelectorAll('.reveal').forEach((el, i) => {
+        el.style.transitionDelay = `${i * 0.06}s`;
+        revealObserver.observe(el);
+    });
+</script>
+{% endblock %}

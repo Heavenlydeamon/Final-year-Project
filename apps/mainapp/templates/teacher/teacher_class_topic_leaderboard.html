@@ -1,0 +1,103 @@
+{% extends 'teacher/teacher_base.html' %}
+{% load static %}
+
+{% block title %}Class Leaderboard: {{ topic.name }} - EcoHeritage Kerala{% endblock %}
+
+{% block page_title %}{{ topic.name }} Class Leaderboard{% endblock %}
+{% block page_subtitle %}Ranking of students in {{ class_obj.name }} who have completed all activities.{% endblock %}
+
+{% block teacher_extra_css %}
+<style>
+    .leaderboard-list-p {
+        background: white;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    .leaderboard-item-p {
+        display: flex;
+        align-items: center;
+        padding: 20px 30px;
+        border-bottom: 1px solid #f1f5f9;
+        transition: 0.3s;
+    }
+    .leaderboard-item-p:hover { background: #f8fafc; }
+    
+    .rank-circle-p {
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 800; margin-right: 20px;
+        font-size: 1rem;
+    }
+    .rank-1 { background: #fbbf24; color: #000; }
+    .rank-2 { background: #94a3b8; color: #000; }
+    .rank-3 { background: #d97706; color: #000; }
+    .rank-other { background: #f1f5f9; color: #64748b; }
+    
+    .score-badge-p {
+        background: var(--sidebar-bg);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 12px;
+        font-weight: 800;
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}
+
+{% block teacher_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold m-0"><i class="fa-solid fa-trophy text-warning me-2"></i> {{ class_obj.name }} Scholars</h3>
+        <div class="d-flex gap-2">
+            <a href="{% url 'teacher_publish_valuation' class_obj.id topic.id %}" class="btn btn-gold-p rounded-pill px-4" onclick="return confirm('Publish all pending marks for this topic?')">
+                <i class="fa-solid fa-upload me-2"></i> Publish All Marks
+            </a>
+            <a href="{% url 'teacher_topic_analytics' class_obj.id topic.id %}" class="btn btn-outline-dark rounded-pill px-4">
+                <i class="fa-solid fa-chart-simple me-2"></i> Analytics
+            </a>
+        </div>
+    </div>
+
+    <div class="leaderboard-list-p">
+        {% for entry in leaderboard %}
+        <div class="leaderboard-item-p">
+            <div class="rank-circle-p {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% else %}rank-other{% endif %}">
+                {{ forloop.counter }}
+            </div>
+            
+            <div class="d-flex align-items-center flex-grow-1">
+                <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed={{ entry.user.username }}" style="width: 45px; height: 45px; border-radius: 12px; margin-right: 20px;">
+                <div>
+                    <div class="fw-bold h5 mb-0">{{ entry.user.get_full_name|default:entry.user.username }}</div>
+                    <div class="text-muted small">
+                        {% if entry.valuation_status == 'published' %}
+                        <span class="text-success"><i class="fa-solid fa-check-circle me-1"></i> Published</span>
+                        {% else %}
+                        <span class="text-warning"><i class="fa-solid fa-clock me-1"></i> Pending Review</span>
+                        {% endif %}
+                        • Level {{ entry.user.userprofile.level }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-end">
+                <div class="score-badge-p">{{ entry.composite_marks|floatformat:1 }}</div>
+                <div class="extra-small text-muted mt-1 fw-bold">TOTAL POINTS</div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="p-5 text-center text-muted">
+            <i class="fa-solid fa-user-clock fs-1 mb-3 opacity-25"></i>
+            <p class="h5">No students have completed this topic yet.</p>
+            <p class="small">Students appear here once they complete the theory, activity, and quiz.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-5 text-center">
+        <p class="text-muted small">Only students who have "Completed" the topic (Theory + Activity + Quiz) are eligible for the leaderboard.</p>
+    </div>
+</div>
+{% endblock %}

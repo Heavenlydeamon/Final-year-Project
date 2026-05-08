@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-12">
+    <div class="mb-10 text-center">
+        <h1 class="text-4xl font-black text-white italic uppercase tracking-tighter mb-2">AI Quiz <span class="text-indigo-500">Generator</span></h1>
+        <p class="text-gray-400 font-medium">Instantly transform any text or lesson content into high-quality MCQ assessments using the local Ollama engine.</p>
+    </div>
+
+    <div class="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 shadow-2xl shadow-indigo-500/5">
+        <form method="post" class="space-y-8">
+            {% csrf_token %}
+            
+            <!-- Topic Selection -->
+            <div>
+                <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Target Topic</label>
+                <select name="topic" required class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold focus:border-indigo-500 transition-all outline-none">
+                    {% for topic in topics %}
+                    <option value="{{ topic.id }}" class="bg-gray-900">{{ topic.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Content Input -->
+            <div>
+                <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Topic Content (Text)</label>
+                <textarea name="content" rows="8" required placeholder="Paste the lesson text here..." class="w-full bg-white/5 border border-white/10 rounded-3xl px-6 py-5 text-white font-medium focus:border-indigo-500 transition-all outline-none resize-none"></textarea>
+            </div>
+
+            <!-- Settings -->
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Num Questions</label>
+                    <input type="number" name="num_questions" value="5" min="1" max="10" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Engine Mode</label>
+                    <div class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-gray-400 font-black text-xs uppercase italic tracking-widest">Ollama / Gemma-2B</div>
+                </div>
+            </div>
+
+            <div class="pt-6">
+                <button type="submit" class="w-full py-5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-2xl text-sm font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-500/20 active:scale-[0.98]">
+                    Generate Assessment
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Info Box -->
+    <div class="mt-12 p-8 bg-indigo-500/5 border border-indigo-500/10 rounded-3xl flex items-start gap-6">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20 flex-shrink-0">
+             <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        </div>
+        <div>
+            <h4 class="text-white font-bold mb-1">Local Processing</h4>
+            <p class="text-xs text-gray-500 leading-relaxed">Generation happens locally on your machine via Ollama. No data is sent to external AI servers, ensuring student privacy and offline capabilities.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
